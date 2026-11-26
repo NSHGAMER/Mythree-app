@@ -62,7 +62,7 @@ insert into public.faqs (question, answer, keywords, category, sort_order) value
    array['leaderboard','rank','ranking','position','hide'], 'Rewards', 80),
   ('What is Guru Dakshina? Is it compulsory?',
    'Guru Dakshina is a completely voluntary contribution to support the organisation. It is not a fee. You can register, learn, take tests, earn rewards and take the final exam without contributing anything.',
-   array['guru','dakshina','payment','fee','pay','money','contribution','compulsory','mandatory','donate','donation'], 'Guru Dakshina', 90),
+   array['guru','dakshina','payment','fee','pay','money','contribution','compulsory','mandatory','donate','donation','free','cost','charge','price'], 'Guru Dakshina', 90),
   ('How do I get a receipt for my Guru Dakshina?',
    'After a successful contribution, open Guru Dakshina and choose Contribution history. Each successful payment has a receipt you can view and print.',
    array['receipt','invoice','history','transaction','payment'], 'Guru Dakshina', 100),

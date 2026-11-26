@@ -23,7 +23,7 @@ const SUGGESTIONS = [
 ]
 
 /** Minimum relevance before we trust an FAQ match. Below this we hand over to a human. */
-export const CONFIDENCE_THRESHOLD = 0.08
+export const CONFIDENCE_THRESHOLD = 0.5
 
 export function Chatbot() {
   const { settings } = useApp()

@@ -296,6 +296,14 @@ create table public.audit_log (
 );
 create index audit_log_created_idx on public.audit_log (created_at desc);
 
+-- array_to_string() is only STABLE, so wrap the vector in an IMMUTABLE helper for the generated column.
+create or replace function public.faq_search_vector(q text, kw text[], a text) returns tsvector
+language sql immutable parallel safe set search_path = '' as $
+  select setweight(to_tsvector('simple'::regconfig, coalesce(q, '')), 'A') ||
+         setweight(to_tsvector('simple'::regconfig, coalesce(array_to_string(kw, ' '), '')), 'A') ||
+         setweight(to_tsvector('simple'::regconfig, coalesce(a, '')), 'C');
+$;
+
 create table public.faqs (
   id uuid primary key default gen_random_uuid(),
   question text not null check (char_length(question) between 3 and 300),
@@ -304,11 +312,7 @@ create table public.faqs (
   category text not null default 'General',
   is_published boolean not null default true,
   sort_order integer not null default 0,
-  search tsvector generated always as (
-    setweight(to_tsvector('simple', coalesce(question, '')), 'A') ||
-    setweight(to_tsvector('simple', array_to_string(keywords, ' ')), 'A') ||
-    setweight(to_tsvector('simple', coalesce(answer, '')), 'C')
-  ) stored,
+  search tsvector generated always as (public.faq_search_vector(question, keywords, answer)) stored,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -132,7 +132,7 @@ describe('Chatbot', () => {
   })
 
   it('does not invent answers – hands over to contact guidance', async () => {
-    faqMock.mockResolvedValue({ matches: [{ id: '2', question: 'x', answer: 'WRONG ANSWER', category: 'x', score: 0.01 }] })
+    faqMock.mockResolvedValue({ matches: [{ id: '2', question: 'x', answer: 'WRONG ANSWER', category: 'x', score: 0.33 }] })
     const user = userEvent.setup()
     wrap(<Chatbot />)
     await user.click(screen.getByRole('button', { name: /open help chat/i }))
