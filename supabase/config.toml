@@ -1,0 +1,43 @@
+# Supabase CLI configuration (local development and function deployment)
+project_id = "mythree"
+
+[auth]
+site_url = "https://mythree.vercel.app"
+additional_redirect_urls = ["http://localhost:5173/**", "https://mythree.vercel.app/**"]
+minimum_password_length = 8
+password_requirements = "letters_digits"
+enable_signup = true
+
+[auth.email]
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = true
+
+[auth.rate_limit]
+email_sent = 30
+sign_in_sign_ups = 30
+token_verifications = 30
+
+[functions.payments-config]
+verify_jwt = false
+
+[functions.payments-webhook]
+verify_jwt = false
+
+[functions.payments-create-order]
+verify_jwt = true
+
+[functions.payments-verify]
+verify_jwt = true
+
+[functions.otp-send]
+verify_jwt = true
+
+[functions.otp-verify]
+verify_jwt = true
+
+[functions.notify-admin]
+verify_jwt = true
+
+[functions.account-delete]
+verify_jwt = true
