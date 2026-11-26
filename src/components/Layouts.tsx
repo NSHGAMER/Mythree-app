@@ -120,20 +120,23 @@ export function PublicLayout() {
           </nav>
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
-            {user ? (
-              <Link to={isAdmin ? '/admin' : '/app'} className={buttonClass('primary', 'sm', 'hidden sm:inline-flex')}>
-                <LayoutDashboard className="size-4" /> {isAdmin ? 'Admin' : 'My Dashboard'}
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className={buttonClass('ghost', 'sm', 'hidden sm:inline-flex')}>
-                  Login
+            {/* Wrapper controls visibility so it never conflicts with the buttons' own display class */}
+            <div className="hidden items-center gap-1.5 sm:flex">
+              {user ? (
+                <Link to={isAdmin ? '/admin' : '/app'} className={buttonClass('primary', 'sm')}>
+                  <LayoutDashboard className="size-4" /> {isAdmin ? 'Admin' : 'My Dashboard'}
                 </Link>
-                <Link to="/register" className={buttonClass('primary', 'sm', 'hidden sm:inline-flex')}>
-                  Register
-                </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link to="/login" className={buttonClass('ghost', 'sm')}>
+                    Login
+                  </Link>
+                  <Link to="/register" className={buttonClass('primary', 'sm')}>
+                    Register
+                  </Link>
+                </>
+              )}
+            </div>
             <button className="grid size-10 place-items-center rounded-xl text-ink lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
               <Menu className="size-6" />
             </button>
