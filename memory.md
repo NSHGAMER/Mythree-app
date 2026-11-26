@@ -1,12 +1,13 @@
 # memory.md – Working memory (update after every milestone)
 
-_Last updated: 26 Nov 2026_
+_Last updated: 26 Nov 2026 (deployment milestone)_
 
 ## Current state
-- Frontend complete for all 12 functional areas; `npm run build` passes; `tsc -b` clean.
-- 64 unit/component tests passing (`npx vitest run`): gamification, programme maths (180-day never locks), validation, CSV/format/errors, Razorpay signature + webhook verification, OTP generation/hashing, amount validation, route guards (member vs admin), quiz runner (answer format, offline guard, confirmation), result view, chatbot (FAQ-only, no invented answers), PWA platform detection.
-- Database migrations written (`supabase/migrations/2026112600000{1,2,3}_*.sql`) – **not yet applied** (waiting for approval to create the Supabase project).
-- Edge Functions written (`supabase/functions/*`) – not yet deployed.
+- LIVE: https://mythree-five.vercel.app (Vercel project nshgamers-projects/mythree, GitHub main auto-deploys).
+- Supabase project mythree (ref yflxqluyvueftocfzqzm, ap-south-1, Free). Migrations 0001–0004 applied; 8 edge functions deployed.
+- Tests executed 26 Nov 2026: 64/64 unit+component, 17/17 DB integration, 76/76 responsive+PWA on production, 4/4 signed-in journeys. Load test: see loadtest/RESULTS.md (Free tier OK to ~200 simultaneous; 2,000 burst timed out).
+- Test accounts (*@mythree.test) were deleted after testing; re-create with loadtest/seed.sql when re-testing.
+- See REPORT.md for pending owner configuration (Auth URLs, SMTP, Razorpay, SMS, admin, Pro plan).
 
 ## Decisions
 - Stack: React 19 + Vite 8 + Tailwind 4 SPA on Vercel; Supabase (Postgres 17, Auth, Edge Functions) in ap-south-1.

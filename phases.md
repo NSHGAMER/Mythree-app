@@ -14,11 +14,11 @@ Legend: ✅ done · 🟡 done in code, waiting on external configuration · ⏳ 
 | 8 | Chatbot & FAQ management | ✅ | FAQ-only answers with confidence threshold, contact fallback, unanswered-question log, admin CRUD |
 | 9 | Final exam readiness & dispatch | ✅ | Eligibility, confirmation, address snapshot, days taken, admin notifications (+ optional email), dispatch workflow, address CSV |
 | 10 | PWA & mobile optimisation | ✅ | Manifest, icons, SW (static only), install prompt, iOS guide, update prompt, offline banner/fallback, responsive layouts |
-| 11 | Security, performance & load testing | ⏳ | Unit/component tests done; DB integration tests, Playwright responsive/PWA checks and load tests run after the database is provisioned |
-| 12 | GitHub push & Vercel production | ⏳ | |
+| 11 | Security, performance & load testing | ✅ | 64 unit/component, 17 DB integration, 76 responsive/PWA (live), 4 journey tests pass; load results in loadtest/RESULTS.md |
+| 12 | GitHub push & Vercel production | ✅ | https://mythree-five.vercel.app – auto-deploys from main |
 
 ## Configuration still required from the organisation
-1. Supabase project approval (free tier) – then migrations are applied.
+1. Supabase Auth URL configuration (Site URL + redirect URLs) – see REPORT.md §9.
 2. Custom SMTP for Supabase Auth emails (e.g. Resend/Brevo/Amazon SES) – the built-in mailer is for testing only.
 3. Razorpay account → API keys (test, then live) + webhook secret.
 4. SMS provider (MSG91 DLT template or Twilio) for mobile OTP.

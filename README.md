@@ -4,6 +4,8 @@ A premium, installable Sanskrit learning and member-management platform for Mait
 
 Members read the printed textbook at home and use Mythree for chapter tests, daily & weekly challenges, streaks, XP, badges and leaderboards. When every chapter is complete they declare readiness and the final exam paper is posted to them. Guru Dakshina is a voluntary contribution via Razorpay.
 
+**Live:** https://mythree-five.vercel.app · **Delivery report:** [REPORT.md](REPORT.md)
+
 ## Documentation
 | File | Contents |
 |---|---|

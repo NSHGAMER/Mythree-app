@@ -138,7 +138,7 @@ export default function AdminMembers() {
                   {COLS.map((c) => (
                     <th key={c.key} className="whitespace-nowrap px-4 py-3 font-bold">
                       {c.sort ? (
-                        <button onClick={() => toggleSort(c.sort!)} className="inline-flex items-center gap-1 hover:text-ink">
+                        <button onClick={() => toggleSort(c.sort!)} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-ink">
                           {c.label}
                           {sort === c.sort && (dir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
                         </button>
