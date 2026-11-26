@@ -82,6 +82,14 @@ console.log(`sessions: ${tokens.length}`)
 if (!tokens.length) process.exit(1)
 const tok = (i) => tokens[i % tokens.length]
 
+// 1b) Stepped concurrency: find where latency degrades (LOADTEST_LEVELS=50,100,200,500)
+const LEVELS = (process.env.LOADTEST_LEVELS ?? '').split(',').filter(Boolean).map(Number)
+for (const n of LEVELS) {
+  report.results.push(await burst(`my_dashboard @${n} concurrent`, n, (i) => rpc(tok(i), 'my_dashboard')))
+  report.results.push(await burst(`leaderboard @${n} concurrent`, n, (i) => rpc(tok(i), 'leaderboard', { p_period: i % 2 ? 'week' : 'all', p_limit: 50 })))
+  await new Promise((r) => setTimeout(r, 3000))
+}
+
 // 2) Concurrent login burst (expect rate limiting to protect Auth)
 if (SCENARIOS.includes('login')) report.results.push(await burst(`login burst x${Math.min(VUS, 300)}`, Math.min(VUS, 300), login))
 
