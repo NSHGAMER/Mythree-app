@@ -1,0 +1,211 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------
+   Mythree design tokens (see design.md)
+   ------------------------------------------------------------------ */
+:root {
+  --bg: #fbf6ec;
+  --bg-elevated: #fffdf8;
+  --surface: #fffdf8;
+  --surface-2: #f5ebda;
+  --surface-3: #ecdcc2;
+  --border: #e6d6bc;
+  --border-strong: #d2b994;
+  --ink: #2e1d12;
+  --ink-2: #5a4030;
+  --ink-3: #85695a;
+  --maroon: #7a1f2b;
+  --maroon-hover: #64161f;
+  --maroon-soft: #f4e1e1;
+  --maroon-ink: #7a1f2b;
+  --gold: #c9962b;
+  --gold-soft: #f7e7c2;
+  --gold-ink: #8a6216;
+  --saffron: #e8891d;
+  --saffron-soft: #fde6cb;
+  --brown: #5a3a22;
+  --success: #2f7d4f;
+  --success-soft: #dcefe2;
+  --danger: #b42318;
+  --danger-soft: #fbe3e0;
+  --info: #2f5d8a;
+  --info-soft: #e0eaf4;
+  --on-primary: #fffaf0;
+  --shadow-color: 60 35 15;
+  --ring: #c9962b;
+}
+
+.dark {
+  --bg: #15100d;
+  --bg-elevated: #1d1511;
+  --surface: #1f1712;
+  --surface-2: #2a1f18;
+  --surface-3: #372a20;
+  --border: #3a2c22;
+  --border-strong: #574333;
+  --ink: #f6ecdd;
+  --ink-2: #d8c4ab;
+  --ink-3: #a68e76;
+  --maroon: #c2505e;
+  --maroon-hover: #d4687a;
+  --maroon-soft: #3b1d21;
+  --maroon-ink: #f0a3ae;
+  --gold: #e0b24c;
+  --gold-soft: #3a2e17;
+  --gold-ink: #efc970;
+  --saffron: #f29d3c;
+  --saffron-soft: #3d2914;
+  --brown: #c79b72;
+  --success: #5cbf83;
+  --success-soft: #17301f;
+  --danger: #f07a6c;
+  --danger-soft: #3a1a16;
+  --info: #7fb0e0;
+  --info-soft: #172636;
+  --on-primary: #1a0f0c;
+  --shadow-color: 0 0 0;
+  --ring: #e0b24c;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-maroon: var(--maroon);
+  --color-maroon-hover: var(--maroon-hover);
+  --color-maroon-soft: var(--maroon-soft);
+  --color-maroon-ink: var(--maroon-ink);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-ink: var(--gold-ink);
+  --color-saffron: var(--saffron);
+  --color-saffron-soft: var(--saffron-soft);
+  --color-brown: var(--brown);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-on-primary: var(--on-primary);
+
+  --font-display: 'Marcellus', 'Tiro Devanagari Sanskrit', Georgia, serif;
+  --font-sanskrit: 'Tiro Devanagari Sanskrit', 'Noto Serif Devanagari', serif;
+  --font-sans: 'Manrope Variable', 'Tiro Devanagari Sanskrit', 'Noto Sans Kannada', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-kannada: 'Noto Sans Kannada', 'Manrope Variable', sans-serif;
+
+  --radius-card: 1.25rem;
+  --shadow-soft: 0 1px 2px rgb(var(--shadow-color) / 0.06), 0 4px 16px rgb(var(--shadow-color) / 0.06);
+  --shadow-lift: 0 2px 4px rgb(var(--shadow-color) / 0.08), 0 12px 32px rgb(var(--shadow-color) / 0.12);
+  --shadow-glow: 0 0 0 1px rgb(201 150 43 / 0.3), 0 8px 30px rgb(201 150 43 / 0.25);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-spin-slow: spin 40s linear infinite;
+  --animate-flicker: flicker 2.4s ease-in-out infinite;
+
+  @keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes flicker {
+    0%, 100% { transform: scale(1) rotate(-2deg); opacity: 1; }
+    50% { transform: scale(1.08) rotate(2deg); opacity: 0.9; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100dvh;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--gold-soft);
+    color: var(--ink);
+  }
+  input, select, textarea, button { font: inherit; }
+  [lang='sa'], .sanskrit {
+    font-family: var(--font-sanskrit);
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft);
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 0px, var(--surface-3) 120px, var(--surface-2) 240px);
+    background-size: 800px 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 0.6rem;
+  }
+  .paisley-bg {
+    background-image:
+      radial-gradient(circle at 20% 10%, rgb(201 150 43 / 0.10), transparent 40%),
+      radial-gradient(circle at 85% 30%, rgb(122 31 43 / 0.08), transparent 45%),
+      radial-gradient(circle at 50% 100%, rgb(232 137 29 / 0.08), transparent 50%);
+  }
+  .border-ornate {
+    background-image: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 16px);
+    height: 2px;
+    opacity: 0.55;
+  }
+  .text-gradient-gold {
+    background: linear-gradient(100deg, var(--maroon) 0%, var(--gold) 60%, var(--saffron) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .scrollbar-thin { scrollbar-width: thin; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+}
