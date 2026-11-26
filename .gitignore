@@ -1,0 +1,40 @@
+# dependencies
+node_modules
+
+# builds
+dist
+dist-ssr
+dev-dist
+*.local
+.vercel
+coverage
+playwright-report
+test-results
+blob-report
+
+# environment / secrets – never commit
+.env
+.env.*
+!.env.example
+supabase/.temp
+supabase/.branches
+*.pem
+*.key
+
+# load-test artefacts
+loadtest/results/*.json
+loadtest/.accounts.json
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.sw?

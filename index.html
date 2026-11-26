@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Mythree – संस्कृतगृहम् | Learn Sanskrit</title>
+    <meta name="description" content="Mythree – संस्कृतगृहम्: a guided 180-day Sanskrit learning programme with chapter tests, daily challenges and progress tracking." />
+    <meta name="theme-color" content="#7A1F2B" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1B1310" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Mythree" />
+    <meta property="og:title" content="Mythree – संस्कृतगृहम्" />
+    <meta property="og:description" content="Learn Sanskrit at home, chapter by chapter." />
+    <meta property="og:image" content="/images/og.jpg" />
+    <meta property="og:type" content="website" />
+    <link rel="preload" as="image" href="/images/logo.webp" />
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      try {
+        var t = localStorage.getItem('mythree-theme');
+        var dark = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Mythree needs JavaScript to run. Please enable JavaScript in your browser.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
