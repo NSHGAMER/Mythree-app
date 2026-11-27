@@ -20,16 +20,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  // uid whose profile read has finished – until it matches the session, role-based routing must wait
+  const [profileFor, setProfileFor] = useState<string | undefined>(undefined)
   const lastUid = useRef<string | undefined>(undefined)
 
   const loadProfile = useCallback(async (uid: string | undefined) => {
     if (!uid) {
       setProfile(null)
+      setProfileFor(undefined)
       return
     }
-    // single-flight: boot, SIGNED_IN and login all ask at once → one request
-    const data = await singleFlight(`profile:${uid}`, async () => (await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()).data)
-    setProfile((data as Profile) ?? null)
+    try {
+      // single-flight: boot, SIGNED_IN and login all ask at once → one request
+      const data = await singleFlight(`profile:${uid}`, async () => (await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()).data)
+      setProfile((data as Profile) ?? null)
+    } finally {
+      setProfileFor(uid)
+    }
   }, [])
 
   useEffect(() => {
@@ -69,7 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       profile,
-      loading,
+      // after a fresh sign-in the session arrives before the profile: keep guards waiting so admins are
+      // not routed to the member area for a moment
+      loading: loading || (!!session && profileFor !== session.user.id),
       isAdmin: profile?.role === 'admin',
       refreshProfile: () => loadProfile(session?.user.id),
       signOut: async () => {
@@ -79,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null)
       },
     }),
-    [session, profile, loading, loadProfile],
+    [session, profile, loading, profileFor, loadProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
