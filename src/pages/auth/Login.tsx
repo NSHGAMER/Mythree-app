@@ -64,8 +64,8 @@ export default function LoginPage() {
       setErr(friendlyError(error))
       return
     }
-    const { data: prof } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
-    navigate(from && from !== '/login' ? from : prof?.role === 'admin' ? '/admin' : '/app', { replace: true })
+    // The profile is loaded once by AuthContext; GuestOnly then routes admins to /admin and members to /app.
+    if (data.user && from && from !== '/login') navigate(from, { replace: true })
   }
 
   async function resend() {

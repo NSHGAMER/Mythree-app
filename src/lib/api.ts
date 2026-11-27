@@ -1,3 +1,4 @@
+import { cached, invalidate, withRetry } from './cache'
 import { supabase } from './supabase'
 import type {
   AppSettings,
@@ -13,13 +14,34 @@ import type {
   VideoLesson,
 } from '../types'
 
-async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
+async function rpcOnce<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new Error('NetworkError: offline')
   }
   const { data, error } = await supabase.rpc(fn, args)
-  if (error) throw new Error(error.message || error.code)
+  if (error) throw new Error(error.message || error.code || String(error))
   return data as T
+}
+
+// Functions that are safe to repeat (reads, or writes made idempotent on the server). Transient
+// overload errors (429/503/504/network) are retried with exponential backoff + jitter.
+const IDEMPOTENT = new Set([
+  'my_dashboard', 'leaderboard', 'my_videos', 'my_exam', 'my_registration', 'faq_answer', 'get_challenge',
+  'start_chapter_test', 'submit_chapter_test', 'submit_challenge', 'record_video_progress', 'request_final_exam',
+  'submit_exam', 'register_exam_page', 'admin_member_overview', 'admin_analytics', 'admin_registrations',
+])
+
+/** Listeners can show "Busy – retrying…" while a call is being retried. */
+export const retryListeners = new Set<(fn: string, attempt: number) => void>()
+
+async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
+  if (!IDEMPOTENT.has(fn)) return rpcOnce<T>(fn, args)
+  return withRetry(() => rpcOnce<T>(fn, args), { retries: 3, onRetry: (a) => retryListeners.forEach((l) => l(fn, a)) })
+}
+
+/** Data that changes after learning activity. */
+export function invalidateLearning() {
+  invalidate('dashboard', 'videos', 'exam', 'leaderboard')
 }
 
 async function invoke<T>(fn: string, body?: Record<string, unknown>): Promise<T> {
@@ -46,11 +68,28 @@ async function invoke<T>(fn: string, body?: Record<string, unknown>): Promise<T>
 
 export const api = {
   // Public
-  settings: async () => {
-    const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).single()
-    if (error) throw error
-    return data as AppSettings
+  settings: (fresh = false) => {
+    if (fresh) invalidate('settings')
+    return cached(
+      'settings',
+      async () => {
+        const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).single()
+        if (error) throw error
+        return data as AppSettings
+      },
+      { ttlMs: 30 * 60_000, persist: true, staleWhileRevalidate: true },
+    )
   },
+  publishedFaqs: () =>
+    cached(
+      'faqs',
+      async () => {
+        const { data, error } = await supabase.from('faqs').select('id, question, answer, keywords, category, sort_order').eq('is_published', true).order('sort_order')
+        if (error) throw error
+        return data as { id: string; question: string; answer: string; keywords: string[]; category: string; sort_order: number }[]
+      },
+      { ttlMs: 30 * 60_000, persist: true, staleWhileRevalidate: true },
+    ),
   phoneAvailable: (phone: string) => rpc<boolean>('check_phone_available', { p_phone: phone }),
   faq: (q: string) =>
     rpc<{ matches: { id: string; question: string; answer: string; category: string; score: number }[] }>('faq_answer', {
@@ -60,19 +99,24 @@ export const api = {
     rpc<boolean>('submit_contact_message', { p_name: v.name, p_email: v.email, p_phone: v.phone ?? '', p_message: v.message }),
 
   // Member
-  dashboard: () => rpc<Dashboard>('my_dashboard'),
+  /** Shared by Dashboard, Learn, Chapter, Challenges and Final Exam pages – one call per 30 s. */
+  dashboard: (fresh = false) => {
+    if (fresh) invalidate('dashboard')
+    return cached('dashboard', () => rpc<Dashboard>('my_dashboard'), { ttlMs: 30_000 })
+  },
   startTest: (chapterId: string) => rpc<TestSession>('start_chapter_test', { p_chapter_id: chapterId }),
   submitTest: (attemptId: string, answers: Record<string, string>) =>
-    rpc<GradedResult>('submit_chapter_test', { p_attempt_id: attemptId, p_answers: answers }),
+    rpc<GradedResult>('submit_chapter_test', { p_attempt_id: attemptId, p_answers: answers }).finally(invalidateLearning),
   challenge: (kind: 'daily' | 'weekly') => rpc<ChallengeSession>('get_challenge', { p_kind: kind }),
   submitChallenge: (instanceId: string, answers: Record<string, string>) =>
-    rpc<GradedResult>('submit_challenge', { p_instance_id: instanceId, p_answers: answers }),
+    rpc<GradedResult>('submit_challenge', { p_instance_id: instanceId, p_answers: answers }).finally(invalidateLearning),
   leaderboard: (period: 'all' | 'week') =>
-    rpc<{ period: string; rows: LeaderboardRow[]; me: { rank: number; score: number } | null }>('leaderboard', {
-      p_period: period,
-      p_limit: 50,
-    }),
-  requestFinalExam: () => rpc<Record<string, unknown>>('request_final_exam'),
+    cached(
+      `leaderboard:${period}`,
+      () => rpc<{ period: string; rows: LeaderboardRow[]; me: { rank: number; score: number } | null; refreshed_at?: string }>('leaderboard', { p_period: period, p_limit: 50 }),
+      { ttlMs: 60_000 },
+    ),
+  requestFinalExam: () => rpc<Record<string, unknown>>('request_final_exam').finally(invalidateLearning),
   myContributions: async () => {
     const { data, error } = await supabase.from('contributions').select('*').order('created_at', { ascending: false })
     if (error) throw error
@@ -85,10 +129,11 @@ export const api = {
   registerExamPage: (sessionId: string, pageNo: number, path: string, size: number) =>
     rpc<{ ok: boolean; pages_count: number }>('register_exam_page', { p_session: sessionId, p_page_no: pageNo, p_path: path, p_size: size }),
   removeExamPage: (sessionId: string, pageNo: number) => rpc<{ removed_path: string | null }>('remove_exam_page', { p_session: sessionId, p_page_no: pageNo }),
-  submitExam: (sessionId: string) => rpc<Record<string, unknown>>('submit_exam', { p_session: sessionId }),
+  submitExam: (sessionId: string) => rpc<Record<string, unknown>>('submit_exam', { p_session: sessionId }).finally(invalidateLearning),
 
   // Video lessons
-  myVideos: () => rpc<{ videos: VideoLesson[]; upcoming: { position: number; title: string; publish_at: string }[] }>('my_videos'),
+  myVideos: () =>
+    cached('videos', () => rpc<{ videos: VideoLesson[]; upcoming: { position: number; title: string; publish_at: string }[] }>('my_videos'), { ttlMs: 30_000 }),
   recordVideoProgress: (videoId: string, position: number) =>
     rpc<{ watched_seconds: number; completed: boolean; percent: number }>('record_video_progress', { p_video_id: videoId, p_position: position }),
 

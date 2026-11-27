@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -12,7 +12,8 @@ vi.mock('../context/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 const faqMock = vi.fn()
-vi.mock('../lib/api', () => ({ api: { faq: (q: string) => faqMock(q) } }))
+const faqListMock = vi.fn(async () => [] as { id: string; question: string; answer: string; keywords: string[]; category: string; sort_order: number }[])
+vi.mock('../lib/api', () => ({ api: { faq: (q: string) => faqMock(q), publishedFaqs: () => faqListMock() } }))
 vi.mock('virtual:pwa-register/react', () => ({ useRegisterSW: () => ({ needRefresh: [false, () => {}], updateServiceWorker: () => {} }) }))
 
 import { Chatbot } from './Chatbot'
@@ -141,6 +142,54 @@ describe('Chatbot', () => {
     expect(await screen.findByText(/don't want to guess/)).toBeInTheDocument()
     expect(screen.queryByText('WRONG ANSWER')).toBeNull()
     expect(screen.getByText(/Open the contact page/)).toBeInTheDocument()
+  })
+})
+
+describe('Chatbot suggested questions', () => {
+  const list = [
+    { id: 'a', question: 'How do I complete a chapter?', answer: 'Score the pass mark in its test.', keywords: ['chapter', 'complete'], category: 'Learning', sort_order: 1 },
+    { id: 'b', question: 'What are weekly tests?', answer: 'A longer weekly challenge.', keywords: ['weekly'], category: 'Challenges', sort_order: 2 },
+  ]
+  it('shows only published FAQ questions and fills the input without sending', async () => {
+    faqListMock.mockResolvedValue(list)
+    const user = userEvent.setup()
+    wrap(<Chatbot />)
+    await user.click(screen.getByRole('button', { name: /open help chat/i }))
+    await user.click(screen.getByRole('button', { name: /show suggested questions/i }))
+    const options = await screen.findAllByRole('option')
+    expect(options.map((o) => o.textContent)).toEqual(list.map((l) => l.question))
+    await user.click(within(screen.getByRole('listbox')).getByRole('button', { name: 'What are weekly tests?' }))
+    expect(screen.getByLabelText('Your question')).toHaveValue('What are weekly tests?')
+    await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull())
+    expect(faqMock).not.toHaveBeenCalled()
+  })
+  it('supports keyboard selection and Escape', async () => {
+    faqListMock.mockResolvedValue(list)
+    const user = userEvent.setup()
+    wrap(<Chatbot />)
+    await user.click(screen.getByRole('button', { name: /open help chat/i }))
+    await user.click(screen.getByRole('button', { name: /show suggested questions/i }))
+    await screen.findAllByRole('option')
+    const input = screen.getByLabelText('Your question')
+    input.focus()
+    await user.keyboard('{ArrowDown}{Enter}')
+    expect(input).toHaveValue('What are weekly tests?')
+    await user.click(screen.getByRole('button', { name: /show suggested questions/i }))
+    await screen.findAllByRole('option')
+    input.focus()
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull())
+  })
+  it('answers instantly from cached FAQs when confident (no server call)', async () => {
+    faqListMock.mockResolvedValue(list)
+    const user = userEvent.setup()
+    wrap(<Chatbot />)
+    await user.click(screen.getByRole('button', { name: /open help chat/i }))
+    await waitFor(() => expect(faqListMock).toHaveBeenCalled())
+    await user.type(screen.getByLabelText('Your question'), 'how to complete chapter')
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+    expect(await screen.findByText('Score the pass mark in its test.')).toBeInTheDocument()
+    expect(faqMock).not.toHaveBeenCalled()
   })
 })
 

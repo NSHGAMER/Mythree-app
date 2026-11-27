@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { Bot, Loader2, MessageCircleQuestion, Send, X } from 'lucide-react'
+import { Bot, Lightbulb, Loader2, MessageCircleQuestion, Send, X } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { api } from '../lib/api'
 import { friendlyError } from '../lib/errors'
+import { CONFIDENCE, matchFaqs, type FaqItem } from '../lib/faq'
 import { cx } from './ui'
 
 interface Msg {
@@ -14,16 +15,8 @@ interface Msg {
   fallback?: boolean
 }
 
-const SUGGESTIONS = [
-  'How does the programme work?',
-  'Is Guru Dakshina compulsory?',
-  'What happens after 180 days?',
-  'How do I take the final exam?',
-  'How do I install the app?',
-]
-
 /** Minimum relevance before we trust an FAQ match. Below this we hand over to a human. */
-export const CONFIDENCE_THRESHOLD = 0.5
+export const CONFIDENCE_THRESHOLD = CONFIDENCE
 
 export function Chatbot() {
   const { settings } = useApp()
@@ -37,6 +30,48 @@ export function Chatbot() {
     },
   ])
   const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [faqs, setFaqs] = useState<FaqItem[] | null>(null)
+  const [showSuggest, setShowSuggest] = useState(false)
+  const [active, setActive] = useState(0)
+  const suggestRef = useRef<HTMLDivElement>(null)
+
+  // Published FAQs are cached on the device (30 min) – they power both suggestions and instant answers.
+  useEffect(() => {
+    if (!open || faqs) return
+    api.publishedFaqs().then(setFaqs).catch(() => setFaqs([]))
+  }, [open, faqs])
+
+  useEffect(() => {
+    if (!showSuggest) return
+    const onDown = (e: MouseEvent) => {
+      if (suggestRef.current && !suggestRef.current.contains(e.target as Node)) setShowSuggest(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showSuggest])
+
+  const suggestions = (faqs ?? []).slice(0, 12)
+  const pickSuggestion = (q: string) => {
+    setInput(q)
+    setShowSuggest(false)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+  const onInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggest || !suggestions.length) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActive((a) => (a + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActive((a) => (a - 1 + suggestions.length) % suggestions.length)
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      pickSuggestion(suggestions[active].question)
+    } else if (e.key === 'Escape') {
+      setShowSuggest(false)
+    }
+  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -49,7 +84,10 @@ export function Chatbot() {
     setInput('')
     setBusy(true)
     try {
-      const { matches } = await api.faq(question)
+      // 1) answer instantly from the cached, published FAQs when confident (no server call)
+      const local = faqs?.length ? matchFaqs(question, faqs) : []
+      // 2) otherwise ask the server (same grounded matching; it also logs unanswered questions for admins)
+      const matches = local[0] && local[0].score >= CONFIDENCE_THRESHOLD ? local : (await api.faq(question)).matches
       const best = matches[0]
       if (best && best.score >= CONFIDENCE_THRESHOLD) {
         setMsgs((m) => [
@@ -145,26 +183,81 @@ export function Chatbot() {
                   <Loader2 className="size-4 animate-spin" /> Looking that up…
                 </div>
               )}
-              {msgs.length === 1 && (
+              {msgs.length === 1 && suggestions.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {SUGGESTIONS.map((s) => (
-                    <button key={s} onClick={() => ask(s)} className="rounded-full border border-line-strong px-3 py-1.5 text-xs font-medium text-ink-2 hover:border-gold hover:bg-gold-soft">
-                      {s}
+                  {suggestions.slice(0, 4).map((s) => (
+                    <button key={s.id} onClick={() => pickSuggestion(s.question)} className="rounded-full border border-line-strong px-3 py-1.5 text-left text-xs font-medium text-ink-2 hover:border-gold hover:bg-gold-soft">
+                      {s.question}
                     </button>
                   ))}
                 </div>
               )}
               <div ref={endRef} />
             </div>
-            <form onSubmit={onSubmit} className="flex items-center gap-2 border-t border-line p-3">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                maxLength={300}
-                placeholder="Type your question…"
-                className="h-11 flex-1 rounded-xl border border-line bg-bg-elevated px-3 text-sm text-ink focus:border-gold focus:outline-none"
-                aria-label="Your question"
-              />
+            <form onSubmit={onSubmit} className="relative flex items-center gap-2 border-t border-line p-3">
+              <AnimatePresence>
+                {showSuggest && (
+                  <motion.div
+                    ref={suggestRef}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-x-3 bottom-full mb-2 max-h-60 overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-lift)] scrollbar-thin"
+                  >
+                    <div className="flex items-center justify-between px-2 py-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-ink-3">Suggested questions</p>
+                      <button type="button" onClick={() => setShowSuggest(false)} className="rounded p-1 text-ink-3 hover:bg-surface-2" aria-label="Close suggestions"><X className="size-3.5" /></button>
+                    </div>
+                    {suggestions.length === 0 ? (
+                      <p className="px-2 py-2 text-xs text-ink-3">{faqs === null ? 'Loading…' : 'No suggestions available.'}</p>
+                    ) : (
+                      <ul role="listbox" id="faq-suggestions" aria-label="Suggested questions">
+                        {suggestions.map((s, i) => (
+                          <li key={s.id} role="option" aria-selected={i === active}>
+                            <button
+                              type="button"
+                              onMouseEnter={() => setActive(i)}
+                              onClick={() => pickSuggestion(s.question)}
+                              className={cx('w-full rounded-xl px-3 py-2 text-left text-sm', i === active ? 'bg-gold-soft text-ink' : 'text-ink-2 hover:bg-surface-2')}
+                            >
+                              {s.question}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div className="relative flex-1">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onInputKey}
+                  maxLength={300}
+                  placeholder="Type your question…"
+                  className="h-11 w-full rounded-xl border border-line bg-bg-elevated pl-3 pr-11 text-sm text-ink focus:border-gold focus:outline-none"
+                  aria-label="Your question"
+                  aria-controls={showSuggest ? 'faq-suggestions' : undefined}
+                  aria-expanded={showSuggest}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActive(0)
+                    setShowSuggest((v) => !v)
+                  }}
+                  className={cx('absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-lg transition', showSuggest ? 'bg-gold-soft text-gold-ink' : 'text-ink-3 hover:bg-surface-2 hover:text-gold-ink')}
+                  aria-label="Show suggested questions"
+                  aria-haspopup="listbox"
+                  aria-expanded={showSuggest}
+                  title="Suggested questions"
+                >
+                  <Lightbulb className="size-4" />
+                </button>
+              </div>
               <button type="submit" disabled={!input.trim() || busy} className="grid size-11 place-items-center rounded-xl bg-maroon text-on-primary disabled:opacity-50" aria-label="Send">
                 <Send className="size-4" />
               </button>

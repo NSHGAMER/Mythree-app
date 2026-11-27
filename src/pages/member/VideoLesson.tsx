@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Alert, Card, EmptyState, ProgressBar, SkeletonCards } from '../../components/ui'
 import { useApp } from '../../context/AppContext'
 import { useAsync, useDocumentTitle } from '../../hooks/useAsync'
-import { api } from '../../lib/api'
+import { api, invalidateLearning } from '../../lib/api'
 import { friendlyError } from '../../lib/errors'
 import { fmtDuration, loadYouTube, type YTPlayer } from '../../lib/video'
 
@@ -26,6 +26,7 @@ export default function VideoLessonPage() {
   const [progress, setProgress] = useState<{ watched: number; completed: boolean } | null>(null)
   const [playerErr, setPlayerErr] = useState('')
   const lastSent = useRef(0)
+  const completedRef = useRef(false)
 
   const watched = progress?.watched ?? video?.watched_seconds ?? 0
   const completed = progress?.completed ?? !!video?.completed_at
@@ -35,10 +36,12 @@ export default function VideoLessonPage() {
     lastSent.current = Date.now()
     try {
       const r = await api.recordVideoProgress(video.id, Math.floor(position))
-      setProgress((prev) => {
-        if (r.completed && !prev?.completed && !video.completed_at) toast('Lesson completed! +15 XP')
-        return { watched: r.watched_seconds, completed: r.completed }
-      })
+      if (r.completed && !completedRef.current && !video.completed_at) {
+        completedRef.current = true
+        invalidateLearning()
+        toast('Lesson completed! +15 XP')
+      }
+      setProgress({ watched: r.watched_seconds, completed: r.completed })
     } catch {
       /* transient: the next heartbeat retries; progress is never claimed client-side */
     }

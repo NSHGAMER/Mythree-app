@@ -30,7 +30,7 @@ interface AppState {
   resolvedTheme: 'light' | 'dark'
   setTheme: (t: ThemePref) => void
   settings: AppSettings | null
-  reloadSettings: () => Promise<void>
+  reloadSettings: (fresh?: boolean) => Promise<void>
   toast: (text: string, tone?: Toast['tone']) => void
   online: boolean
 }
@@ -90,20 +90,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const reloadSettings = useCallback(async () => {
+  const reloadSettings = useCallback(async (fresh = true) => {
     if (!isSupabaseConfigured) {
       setSettings(DEFAULT_SETTINGS)
       return
     }
     try {
-      setSettings(await api.settings())
+      setSettings(await api.settings(fresh))
     } catch {
       setSettings((s) => s ?? DEFAULT_SETTINGS)
     }
   }, [])
 
   useEffect(() => {
-    reloadSettings()
+    reloadSettings(false) // cached copy first (stale-while-revalidate)
   }, [reloadSettings])
 
   useEffect(() => {
