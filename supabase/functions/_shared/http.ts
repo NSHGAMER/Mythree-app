@@ -41,8 +41,15 @@ export async function requireUser(req: Request): Promise<User | null> {
   return data.user
 }
 
+/**
+ * Trusted client IP: headers set by the edge network first; for X-Forwarded-For use the LAST hop
+ * (appended by the platform proxy) – the first value can be forged by the client.
+ */
 export function clientIp(req: Request) {
-  return (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown'
+  const cf = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip')
+  if (cf?.trim()) return cf.trim()
+  const xff = (req.headers.get('x-forwarded-for') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+  return xff[xff.length - 1] ?? 'unknown'
 }
 
 export async function rateLimit(db: SupabaseClient, key: string, max: number, windowSeconds: number) {

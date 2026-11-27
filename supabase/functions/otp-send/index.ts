@@ -8,13 +8,14 @@ const RESEND_SECONDS = 60
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
   if (req.method !== 'POST') return fail(req, 'METHOD_NOT_ALLOWED', 405)
-  if (!smsConfigured()) return fail(req, 'SMS_NOT_CONFIGURED', 503)
-
   const user = await requireUser(req)
   if (!user) return fail(req, 'NOT_AUTHENTICATED', 401)
+  if (!smsConfigured()) return fail(req, 'SMS_NOT_CONFIGURED', 503)
   const db = adminClient()
 
-  const { data: profile } = await db.from('profiles').select('phone, phone_verified_at').eq('id', user.id).single()
+  const { data: profile } = await db.from('profiles').select('phone, guardian_phone, phone_verified_at').eq('id', user.id).single()
+  // minors verify the guardian's number (agreed contact rule)
+  if (profile && !profile.phone) profile.phone = profile.guardian_phone
   if (!profile?.phone) return fail(req, 'INVALID_PHONE')
   if (profile.phone_verified_at) return json(req, { sent: false, already_verified: true, expires_in: 0, resend_in: 0 })
 

@@ -28,8 +28,8 @@ Deno.serve(async (req) => {
   if (new Date(otp.expires_at).getTime() < Date.now()) return fail(req, 'OTP_EXPIRED')
   if (otp.attempts >= MAX_ATTEMPTS) return fail(req, 'OTP_TOO_MANY_ATTEMPTS', 429)
 
-  const { data: profile } = await db.from('profiles').select('phone').eq('id', user.id).single()
-  if (profile?.phone !== otp.phone) return fail(req, 'OTP_EXPIRED') // phone changed since the code was sent
+  const { data: profile } = await db.from('profiles').select('phone, guardian_phone').eq('id', user.id).single()
+  if ((profile?.phone ?? profile?.guardian_phone) !== otp.phone) return fail(req, 'OTP_EXPIRED') // phone changed since the code was sent
 
   const pepper = Deno.env.get('OTP_PEPPER') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!.slice(-24)
   const ok = timingSafeEqual(await otpHash(user.id, otp.phone, code, pepper), otp.code_hash)
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
   const now = new Date().toISOString()
   await db.from('otp_codes').update({ consumed_at: now }).eq('id', otp.id)
-  await db.from('profiles').update({ phone_verified_at: now }).eq('id', user.id).eq('phone', otp.phone)
+  await db.from('profiles').update({ phone_verified_at: now }).eq('id', user.id)
   log('otp_verified', { user: user.id })
   return json(req, { verified: true })
 })

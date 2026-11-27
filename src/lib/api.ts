@@ -123,6 +123,9 @@ export const api = {
     return data as Contribution[]
   },
 
+  /** Marks the member as active (at most once per browser session; replaces the old write inside my_dashboard). */
+  touchLastSeen: () => rpcOnce<void>('touch_last_seen').catch(() => {}),
+
   // Examination
   myExam: () => rpc<MyExam>('my_exam'),
   startExam: () => rpc<Record<string, unknown>>('start_exam'),

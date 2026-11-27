@@ -40,7 +40,8 @@ export default defineConfig({
       workbox: {
         // Only static, public build assets are precached. API / auth / payment traffic is never cached.
         globPatterns: ['**/*.{js,css,html,woff2,png,webp,svg}'],
-        globIgnores: ['**/images/promo-1080.*', '**/images/og.jpg'],
+        // admin-only heavy chunks are fetched on demand instead of being precached on every member's phone
+        globIgnores: ['**/images/promo-1080.*', '**/images/og.jpg', '**/assets/exceljs*', '**/assets/charts-*', '**/assets/jszip*'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/auth\/callback/],
         cleanupOutdatedCaches: true,

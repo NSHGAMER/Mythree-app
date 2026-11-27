@@ -1,6 +1,9 @@
 import { motion } from 'motion/react'
 import {
   ArrowRight,
+  BadgeCheck,
+  GraduationCap,
+  PlayCircle,
   Award,
   BookOpen,
   CalendarDays,
@@ -164,8 +167,46 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard icon={<Zap className="size-5" />} tone="gold" label="Total XP" value={num(d.profile.xp)} sub={`${num(d.weekly_xp)} this week`} />
         <StatCard icon={<Flame className="size-5" />} tone="saffron" label="Streak" value={`${d.profile.current_streak} day${d.profile.current_streak === 1 ? '' : 's'}`} sub={`Best: ${d.profile.longest_streak}`} />
-        <StatCard icon={<Trophy className="size-5" />} tone="maroon" label="Rank" value={`#${d.rank}`} sub="All-time leaderboard" />
+        <StatCard icon={<Trophy className="size-5" />} tone="maroon" label="Rank" value={d.rank ? `#${d.rank}` : '—'} sub="All-time leaderboard" />
         <StatCard icon={<Award className="size-5" />} tone="success" label="Badges" value={`${d.badges_earned}/${d.badges_total}`} sub="Achievements" />
+      </div>
+
+      {/* ------------------------------------------------ Journey: videos, exam, registration */}
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+        <Link to="/app/videos" className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-3"><PlayCircle className="size-4 text-maroon" /> Video classes</p>
+          <p className="mt-2 font-display text-2xl text-ink">{d.videos ? `${Math.round(d.videos.percent)}%` : '—'}</p>
+          <ProgressBar value={d.videos?.percent ?? 0} size="sm" tone="gold" className="mt-2" label="Video lessons completed" />
+          <p className="mt-2 text-xs text-ink-3">{d.videos ? `${d.videos.completed} of ${d.videos.total} lessons completed` : 'Lessons will appear when published'}</p>
+        </Link>
+        <Link to="/app/exam" className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-3"><GraduationCap className="size-4 text-maroon" /> Examination</p>
+          {d.result ? (
+            <>
+              <p className="mt-2 font-display text-2xl uppercase text-ink">{d.result.result}</p>
+              <p className="mt-1 text-xs text-ink-3">{d.result.marks ?? '—'} / {d.result.max_marks} marks · result published</p>
+            </>
+          ) : d.exam_schedule ? (
+            <>
+              <p className="mt-2 font-display text-xl text-ink">{fmtDate(d.exam_schedule.exam_starts_at)}</p>
+              <p className="mt-1 text-xs text-ink-3">
+                {d.profile.exam_preference === 'online' ? 'Online' : 'Offline'} ·{' '}
+                {d.exam_schedule.session_status === 'submitted' ? 'answer sheets submitted' : d.exam_schedule.session_status === 'in_progress' ? 'exam in progress' : `${Math.max(0, Math.ceil((new Date(d.exam_schedule.exam_starts_at).getTime() - Date.now()) / 86400000))} days to go`}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 font-display text-xl text-ink">{d.suggested_exam_month ? new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(d.suggested_exam_month)) : 'To be announced'}</p>
+              <p className="mt-1 text-xs text-ink-3">{d.profile.exam_preference === 'online' ? 'Online' : 'Offline'} exam · suggested month, exact date to follow</p>
+            </>
+          )}
+          <p className="mt-auto pt-2 text-xs font-semibold text-maroon-ink">{d.exam.request ? `Readiness: ${d.exam.request.status.replace(/_/g, ' ')}` : d.exam.eligible ? 'Ready to request the final exam' : `${d.exam.chapters_completed}/${d.exam.chapters_total} chapters for eligibility`}</p>
+        </Link>
+        <Link to="/app/profile" className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-3"><BadgeCheck className="size-4 text-success" /> Registration</p>
+          <p className="mt-2 font-mono text-2xl font-bold tracking-wide text-maroon-ink">{d.profile.member_uid ?? profile?.member_uid ?? '—'}</p>
+          <p className="mt-1 text-xs text-ink-3">{(d.profile.registration_status ?? profile?.registration_status) === 'confirmed' ? 'Registration fee paid · membership active' : 'Registration payment pending'}</p>
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">

@@ -35,6 +35,7 @@ import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../lib/api'
 import { levelForXp } from '../lib/gamification'
 import { initials } from '../lib/format'
 import { effectiveStreak } from '../lib/programme'
@@ -324,6 +325,16 @@ export function MemberLayout() {
   const { profile } = useAuth()
   const { pathname } = useLocation()
   const lvl = levelForXp(profile?.xp ?? 0)
+  useEffect(() => {
+    if (!profile) return
+    try {
+      if (sessionStorage.getItem('mythree-seen') === profile.id) return
+      sessionStorage.setItem('mythree-seen', profile.id)
+    } catch {
+      /* ignore */
+    }
+    api.touchLastSeen()
+  }, [profile])
   if (profile && profile.role === 'member' && profile.registration_status && profile.registration_status !== 'confirmed' && !PENDING_ALLOWED.includes(pathname)) {
     return <Navigate to="/app/registration" replace />
   }

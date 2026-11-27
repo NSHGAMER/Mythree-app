@@ -188,6 +188,9 @@ export interface Dashboard {
     programme_start_date: string
     created_at: string
     has_address: boolean
+    member_uid?: string | null
+    registration_status?: 'pending_payment' | 'confirmed' | 'cancelled'
+    exam_preference?: 'online' | 'offline'
   }
   programme: {
     start_date: string
@@ -210,7 +213,11 @@ export interface Dashboard {
     xp_awarded: number
   } | null
   weekly_xp: number
-  rank: number
+  rank: number | null
+  videos?: { total: number; completed: number; percent: number }
+  exam_schedule?: { exam_starts_at: string; title: string; session_status: 'in_progress' | 'submitted' | 'expired' | null } | null
+  suggested_exam_month?: string
+  result?: { result: 'pass' | 'fail' | 'absent' | 'withheld'; marks: number | null; max_marks: number } | null
   badges_earned: number
   badges_total: number
   recent_badges: BadgeLite[]

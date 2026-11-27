@@ -41,3 +41,19 @@ verify_jwt = true
 
 [functions.account-delete]
 verify_jwt = true
+
+[functions.registration-order]
+verify_jwt = true
+
+[functions.registration-verify]
+verify_jwt = true
+
+[functions.registration-status]
+verify_jwt = true
+
+# called by pg_cron with a Vault shared secret
+[functions.payments-reconcile]
+verify_jwt = false
+
+[functions.notifications-worker]
+verify_jwt = false
