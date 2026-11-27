@@ -90,6 +90,46 @@ for (const n of LEVELS) {
   await new Promise((r) => setTimeout(r, 3000))
 }
 
+// 1c) Phase 6 (staging): new read paths at stepped concurrency, video heartbeats (writes), and
+//     realistic "users" – each virtual user runs a short session with think time, so N users ≠ N simultaneous requests.
+const P6 = (process.env.LOADTEST_P6_LEVELS ?? '').split(',').filter(Boolean).map(Number)
+const VIDEO = process.env.LOADTEST_VIDEO_ID
+for (const n of P6) {
+  report.results.push(await burst(`my_dashboard @${n} concurrent`, n, (i) => rpc(tok(i), 'my_dashboard')))
+  report.results.push(await burst(`leaderboard(snapshot) @${n} concurrent`, n, (i) => rpc(tok(i), 'leaderboard', { p_period: i % 2 ? 'week' : 'all', p_limit: 50 })))
+  report.results.push(await burst(`my_videos @${n} concurrent`, n, (i) => rpc(tok(i), 'my_videos')))
+  report.results.push(await burst(`my_exam @${n} concurrent`, n, (i) => rpc(tok(i), 'my_exam')))
+  report.results.push(await burst(`my_registration @${n} concurrent`, n, (i) => rpc(tok(i), 'my_registration')))
+  if (VIDEO) report.results.push(await burst(`record_video_progress @${n} concurrent (writes)`, n, (i) => rpc(tok(i), 'record_video_progress', { p_video_id: VIDEO, p_position: 10 })))
+  await new Promise((r) => setTimeout(r, 5000))
+}
+const USERS = (process.env.LOADTEST_USERS ?? '').split(',').filter(Boolean).map(Number)
+const WINDOW_S = Number(process.env.LOADTEST_WINDOW_S ?? 60)
+for (const n of USERS) {
+  const t0 = performance.now()
+  const all = []
+  let peak = 0, inflight = 0
+  const call = async (fnName, args) => {
+    inflight++; peak = Math.max(peak, inflight)
+    const r = await timed(() => rpc(tok(Math.floor(Math.random() * tokens.length)), fnName, args))
+    inflight--; r.fn = fnName; all.push(r)
+  }
+  const think = () => new Promise((r) => setTimeout(r, 1000 + Math.random() * 3000))
+  await Promise.all(Array.from({ length: n }, async () => {
+    await new Promise((r) => setTimeout(r, Math.random() * WINDOW_S * 1000)) // arrivals spread over the window
+    await call('my_dashboard'); await think()
+    await call('my_videos'); await think()
+    if (VIDEO) { await call('record_video_progress', { p_video_id: VIDEO, p_position: 20 }); await think() }
+    await call('leaderboard', { p_period: 'all', p_limit: 50 }); await think()
+    await call('my_exam')
+  }))
+  const s = stats(`${n} users active within ${WINDOW_S}s (5 calls each, 1–4 s think time)`, all, performance.now() - t0)
+  s.peak_in_flight = peak
+  s.by_function = Object.fromEntries([...new Set(all.map((r) => r.fn))].map((fn) => { const rs = all.filter((r) => r.fn === fn); const ms = rs.map((r) => r.ms).sort((a, b) => a - b); return [fn, { ok: rs.filter((r) => r.ok).length, n: rs.length, p50: Math.round(ms[Math.floor(ms.length / 2)]), p95: Math.round(ms[Math.floor(ms.length * 0.95)]) }] }))
+  report.results.push(s)
+  await new Promise((r) => setTimeout(r, 5000))
+}
+
 // 2) Concurrent login burst (expect rate limiting to protect Auth)
 if (SCENARIOS.includes('login')) report.results.push(await burst(`login burst x${Math.min(VUS, 300)}`, Math.min(VUS, 300), login))
 

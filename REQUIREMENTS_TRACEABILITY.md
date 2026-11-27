@@ -1,65 +1,68 @@
 # Requirements traceability
 
-Status legend: ✅ implemented **and** tested · 🟡 implemented, test pending/partial · ⏳ in progress · ⬜ not started · ⚠ blocked on owner input
+Status legend: ✅ implemented **and** tested on staging · 🟡 implemented, test partial (reason given) · ⬜ not started · ⚠ blocked on owner input
 Source: owner directives of 26 Nov 2026 (build) and 27 Nov 2026 (professor requirements + free-tier hardening). The professor's original PDF has not been provided; requirements below come from the owner's directive.
+Nothing here is in production yet: all changes are on branch `feature/professor-requirements` and the free `mythree-staging` Supabase project.
 
-_Last updated: 27 Nov 2026 – Phase 0_
+_Last updated: 27 Nov 2026 – Phase 6 (staging tests)_
+
+Test references: **DB** = `tests/db/*.test.ts` (46 client-side tests on staging) · **SQL** = `tests/db/registration_suite.sql`, `tests/db/exam_deadline_suite.sql` · **E2E** = `tests/e2e/flows.spec.ts` + `tests/e2e/phases.spec.ts` (desktop + mobile, staging) · **Unit** = `src/**/*.test.ts(x)` (99).
 
 ## A. Registration & payments
-| ID | Requirement | Existing (v1.0.0) | New implementation | DB changes | Tests | Status |
-|---|---|---|---|---|---|---|
-| R1 | Collect full name, DOB, address, PIN, exam preference, email, contact | name, age, address, PIN, email, phone | DOB replaces age (age derived), exam preference (online/offline) | `profiles.date_of_birth`, `exam_preference` | — | ⬜ |
-| R2 | ≥18 uses own phone; <18 uses guardian phone; siblings may share; no global phone uniqueness | unique phone enforced | separate member/guardian phone, conditional validation | drop `profiles_phone_key`, add `guardian_name`, `guardian_phone` | — | ⬜ |
-| R3 | Permanent UID = first 4 letters of name + last 4 digits of applicable phone, uppercase, collision-safe | — | `generate_member_uid()` with advisory lock, suffix `-2…`, pad short names with X | `profiles.member_uid unique` | — | ⬜ (policy awaiting confirmation) |
-| R4 | Mandatory ₹151 registration fee, confirmed only after server verification | — (Guru Dakshina only) | registration order/verify/status edge functions, webhook routing, gated access | `registration_payments`, `profiles.registration_status` | — | ⬜ ⚠ needs Razorpay test keys |
-| R5 | No duplicate payments / registrations; safe retries; recovery if browser closes; status check | Guru Dakshina idempotency | idempotency key, unique paid-per-member index, status-check endpoint, reconciliation job | partial unique index | — | ⬜ |
-| R6 | Guru Dakshina stays optional, separate, admin-configurable ₹151 | ✅ | unchanged | — | unit (signature) | ✅ (live checkout untested – no keys) |
+| ID | Requirement | Implementation | DB changes | Tests | Status |
+|---|---|---|---|---|---|
+| R1 | Collect full name, DOB, address, PIN, exam preference, email, contact | 3-step registration form; DOB replaces age (age derived) | `profiles.date_of_birth`, `exam_preference`, `guardian_*` | Unit (validation), SQL (sign-up trigger), E2E | ✅ |
+| R2 | ≥18 own phone; <18 guardian phone; siblings may share; no global uniqueness | conditional validation in app and sign-up trigger | dropped `profiles_phone_key` | Unit, SQL (`GUARDIAN_PHONE_REQUIRED`, `PHONE_REQUIRED`, shared phone accepted) | ✅ |
+| R3 | Permanent UID = 4 letters + last 4 digits, uppercase, collision-safe | `assign_member_uid()` advisory lock, suffix `-2…`, X padding | `profiles.member_uid` unique | Unit, SQL (siblings → `ANAN5678`, `ANAN5678-2`), DB, E2E | ✅ ⚠ owner to confirm policy for non-Latin names (`XXXX…`) |
+| R4 | Mandatory ₹151 fee, confirmed only after server verification | registration-order / verify / status functions, webhook routing, access gate | `registration_payments`, `registration_status` | SQL (amount mismatch, paid → UID + receipt), DB (gate, status function), E2E (payment page) | 🟡 live Razorpay checkout untested – needs test keys |
+| R5 | No duplicate payments/registrations; retries; recovery; status check | one open order re-used, idempotency key, one-paid index, duplicate → refund flag, status check, reconciliation job | partial unique index | SQL (replay idempotent, second order → `DUPLICATE_PAYMENT_REFUND_REQUIRED`, second paid row rejected) | 🟡 Razorpay API paths need test keys |
+| R6 | Guru Dakshina optional, separate | unchanged | — | Unit, DB | ✅ (live checkout untested – no keys) |
 
 ## B. Learning
-| ID | Requirement | Existing | New | DB | Tests | Status |
-|---|---|---|---|---|---|---|
-| L1 | Chapter-wise learning, completion tracking | ✅ | gate by confirmed registration | — | 17 DB integration | ✅ |
-| L2 | Chapter tests: Q&A, attempts, score, pass %, best score, XP, history | ✅ | — | — | integration + e2e | ✅ |
-| L3 | Daily & weekly challenges | ✅ auto-generated | admin-managed sets: questions, availability window, scoring, rewards | `challenge_sets` | — | ⬜ |
-| L4 | XP, streaks, badges, leaderboard | ✅ | leaderboard snapshot (Phase 5) | — | integration | ✅ |
-| L5 | 180-day guidance, never locked, admin sees duration | ✅ | — | — | unit + integration | ✅ |
-| L6 | Admin chapter/question CRUD, ordering, pass % | ✅ | — | — | e2e (admin journey) | ✅ |
+| ID | Requirement | Implementation | DB | Tests | Status |
+|---|---|---|---|---|---|
+| L1 | Chapter-wise learning, completion tracking, gated by confirmed registration | gate trigger on attempts/challenges/exam requests | trigger | DB, SQL (`REGISTRATION_PENDING`), E2E | ✅ |
+| L2 | Chapter tests: attempts, score, pass %, best score, XP, history | v1 | — | DB, E2E | ✅ |
+| L3 | Admin-managed daily & weekly challenges | `challenge_sets` + admin page; auto challenges as fallback | `challenge_sets` | DB (set replaces automatic questions, members cannot create), E2E (admin page) | ✅ |
+| L4 | XP, streaks, badges, leaderboard | leaderboard snapshot refreshed every 5 min | `leaderboard_snapshot` | DB, load test | ✅ |
+| L5 | 180-day guidance, never locked | v1 | — | Unit, DB | ✅ |
+| L6 | Admin chapter/question CRUD | v1 | — | E2E | ✅ |
 
 ## C. Video lessons
-| ID | Requirement | Existing | New | DB | Tests | Status |
-|---|---|---|---|---|---|---|
-| V1 | Chronological lessons, admin configures/uploads, scheduled publication | — | video lessons admin + member list | `video_lessons` | — | ⬜ ⚠ hosting decision |
-| V2 | Real watch tracking, resume, completion %, anti-seek | — | heartbeat RPC records watched seconds server-side, caps credit to wall-clock | `video_progress` | — | ⬜ |
-| V3 | Access respects registration/payment | — | RLS + RPC checks | — | — | ⬜ |
+| ID | Requirement | Implementation | DB | Tests | Status |
+|---|---|---|---|---|---|
+| V1 | Chronological lessons, admin configures, scheduled publication | admin Video lessons page, `publish_at` | `video_lessons` | DB (future lesson hidden), E2E | ✅ ⚠ hosting: unlisted YouTube assumed |
+| V2 | Real watch tracking, resume, completion %, anti-seek | 10-s buckets credited only at real-time speed | `video_progress` | Unit, DB (seek to end = 0 s; real-time playback completes, XP once, resume position) | ✅ |
+| V3 | Access respects registration | RPC checks | — | DB (pending member blocked) | ✅ |
 
 ## D. Examination
-| ID | Requirement | Existing | New | DB | Tests | Status |
-|---|---|---|---|---|---|---|
-| E1 | Readiness button, request, admin notified, UID/name/chapters/%/date/days | ✅ (no UID yet) | add UID, % | — | integration | 🟡 |
-| E2 | Online/offline preference | — | from registration, editable | `profiles.exam_preference` | — | ⬜ |
-| E3 | Suggested date = registration month + 3, same for a month's cohort, admin override, countdown | — | exam cohorts per month | `exam_schedules` | — | ⬜ |
-| E4 | Online exam: START → 3 h server-enforced timer → PDF paper → multi-image upload with progress/review → SUBMIT | — | exam session RPCs, private storage, client compression | `exam_sessions`, `exam_submission_pages`, storage bucket | — | ⬜ ⚠ storage decision |
-| E5 | Offline exam: preserve physical flow; admin records details/results | ✅ dispatch flow | results entry for offline | `exam_results` | — | 🟡 |
-| E6 | Admin evaluation: view sheets, marks, remarks, status, save, publish | — | evaluation UI | `exam_results` | — | ⬜ |
-| E7 | Excel result import with template, preview, validation, audit, no silent overwrite | — | xlsx template/import | `result_imports` | — | ⬜ |
-| E8 | Member result view (name, UID, date, type, marks, max, remarks, PASS/FAIL), private | — | results page | RLS | — | ⬜ |
+| ID | Requirement | Implementation | DB | Tests | Status |
+|---|---|---|---|---|---|
+| E1 | Readiness request, admin notified | v1 + UID | — | DB | ✅ |
+| E2 | Online/offline preference | from registration, editable in settings | `exam_preference` | DB (offline member cannot start online exam), E2E | ✅ |
+| E3 | Suggested date = registration month + 3 per cohort, admin override, countdown | `exam_schedules`, per-member override | `exam_schedules` | Unit, DB (`2027-02-01` for Nov cohort), E2E | ✅ |
+| E4 | START → 3 h server timer → PDF → multi-image upload → SUBMIT | exam sessions, private buckets, storage policies | `exam_sessions`, `exam_submission_pages` | DB (3 h deadline, resume, paper access only during session, own-folder uploads, file must exist, submit final + idempotent), SQL (uploads/submit refused after deadline + grace) | ✅ ⚠ storage plan (compression + purge) to confirm |
+| E5 | Offline exam flow preserved; admin records results | v1 dispatch + results by UID | `exam_results` | DB | ✅ |
+| E6 | Admin evaluation: view sheets, marks, remarks, publish | Evaluation page | `exam_results` | DB (admin sees submission + signed image URL; publish) , E2E (page) | ✅ |
+| E7 | Excel import: template, preview, validation, audit, no silent overwrite | dry-run preview, issues list, `result_imports` | `result_imports` | DB (unknown UID, duplicate, bad marks/date/result, published not changed, audit row) | ✅ |
+| E8 | Member result view, private until published | `my_exam().results` | RLS | DB (hidden until published) | ✅ |
 
 ## E. Dashboards, admin, chatbot
-| ID | Requirement | Existing | New | DB | Tests | Status |
-|---|---|---|---|---|---|---|
-| D1 | Central member dashboard (registration, payment, UID, learning, video %, challenges, XP, rank, exam pref/date/countdown/readiness/submission/result, Guru Dakshina) | partial ✅ | add new sections | — | — | ⬜ |
-| D2 | Admin: search/UID lookup, payment status, video progress, exam schedules, answer review, results, reports/exports, pagination, audit | partial ✅ | extend | — | — | ⬜ |
-| C1 | Chatbot grounded in FAQs | ✅ | — | — | unit + integration | ✅ |
-| C2 | Suggested-questions button (FAQ-sourced, fills input, no auto-send, keyboard/mobile) | — | new | — | — | ⬜ |
-| C3 | FAQ matching + caching | server only | browser cache + local matching | — | — | ⬜ |
+| ID | Requirement | Implementation | Tests | Status |
+|---|---|---|---|---|
+| D1 | Central member dashboard | UID, registration, video %, exam date/countdown/result added | DB, E2E | ✅ |
+| D2 | Admin search/UID lookup, payment status, schedules, evaluation, exports | Registrations, Videos, Daily & weekly tests, Exam schedules, Evaluation pages | DB, E2E | ✅ |
+| C1 | Chatbot grounded in FAQs | v1 | Unit, DB | ✅ |
+| C2 | Suggested-questions button | FAQ-sourced, fills input without sending, keyboard/Escape/outside click | Unit, E2E (desktop + mobile) | ✅ |
+| C3 | FAQ matching + caching | cached FAQs + local matching | Unit | ✅ |
 
 ## F. Reliability, security, operations
-| ID | Requirement | Existing | New | DB | Tests | Status |
-|---|---|---|---|---|---|---|
-| S1 | Frontend caching, de-dup, backoff, preserved inputs, pagination | — | Phase 5 | — | — | ⬜ |
-| S2 | DB optimisation (dashboard, leaderboard, FAQ, admin overview, analytics, rate limiter) | — | Phase 5 | snapshots, stats, indexes | — | ⬜ |
-| S3 | pg_cron / pgmq jobs (notifications, reconciliation, refresh, cleanup, chatbot logging) | — | Phase 5 | extensions + queues | — | ⬜ |
-| S4 | CAPTCHA, trusted IP, enumeration protection, server-side validation | partial | Phase 5 | — | — | ⬜ |
-| S5 | OTP policy evaluation (no silent change) | — | documented in IMPLEMENTATION_REPORT | — | — | ⏳ |
-| B1 | Free backups via GitHub Actions, restore doc + drill, pause recovery, admin checklist | — | `db-backup.yml`, `BACKUP_AND_RECOVERY.md` | — | restore drill pending (needs secrets) | 🟡 |
-| T1 | Regression + load 50/100/200/500/1,000 users | baseline done (v1) | Phase 6 | — | — | ⬜ |
+| ID | Requirement | Implementation | Tests | Status |
+|---|---|---|---|---|
+| S1 | Frontend caching, de-dup, backoff | `lib/cache.ts` | Unit | ✅ |
+| S2 | DB optimisation | read-only dashboard, snapshot leaderboard, indexes, append-only rate limiter | DB, load test | ✅ |
+| S3 | pg_cron / pgmq jobs | 4 jobs scheduled on staging; endpoints require the Vault secret | DB (403 without secret) | 🟡 e-mail digest untested (no Resend key) |
+| S4 | CAPTCHA, trusted IP, enumeration, validation | trusted IP, anonymous phone probing closed, server-side validation | DB | 🟡 CAPTCHA (free Cloudflare Turnstile) not added – needs a site key from the owner |
+| S5 | OTP policy evaluation (no silent change) | documented in IMPLEMENTATION_REPORT; nothing changed | — | ⚠ owner decision |
+| B1 | Free backups, restore doc + drill | `db-backup.yml`, `BACKUP_AND_RECOVERY.md` | — | 🟡 restore drill needs the owner's repository secrets |
+| T1 | Regression + load 50/100/200/500/1,000 | v1 regression 17/17 on new schema; load results in `loadtest/RESULTS.md` (Phase 6) | DB, E2E, load | ✅ 1,000 members/minute: 0 errors, p95 0.11 s · 2,000 members/minute not supported on Free |

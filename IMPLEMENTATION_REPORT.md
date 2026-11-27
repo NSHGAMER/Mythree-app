@@ -58,3 +58,17 @@ Status rule: nothing below is "complete" until the migrations have been applied 
 
 ### Dependencies added
 - `exceljs@4.4.0`, `jszip@3.10.1` (admin only, lazy-loaded). `npm audit` reports a moderate advisory in exceljs's `uuid` dependency (affects `uuid` v3/v5/v6 with a caller-supplied buffer; exceljs does not use that path).
+
+## Phase 6 – staging verification (27 Nov 2026)
+- Created the free Supabase project **mythree-staging** (owner-approved, $0). Applied migrations 0001–0008 (byte-identical to the branch, verified by MD5), deployed `registration-status`, `payments-reconcile`, `notifications-worker`, scheduled the four pg_cron jobs. Seeded 1 admin, 300 confirmed and 5 pending test members on the reserved `.test` domain (test password kept in git-ignored `.env.staging`).
+- **Tests:** unit 99/99 · DB integration 46/46 (17 v1 regression + 29 new) · SQL suites for registration/payments and exam deadlines all as expected · E2E 10/10 on desktop and mobile against staging.
+- **Bugs found and fixed by these tests** (all on the branch, none ever reached production):
+  1. 0001 had a broken `$`-quote in `faq_search_vector` – a fresh project could not be built from the repo.
+  2. Leaderboard failed for members: bare `DELETE` in `refresh_leaderboard` is rejected by Supabase's safe-update guard.
+  3. `check_phone_available` was still callable anonymously (granted via PUBLIC) – phone probing is now really closed.
+  4. `start_exam` refused to resume an existing session once the readiness status changed (e.g. after results were published).
+  5. One bad date/exam mode in an Excel import aborted the whole import instead of being listed as an issue.
+  6. Admins were briefly routed to the member area after login (role was read before the profile loaded).
+- **Load (Free plan):** 1,000 members active in the same minute – 5,000/5,000 calls OK, p95 0.11 s. 500 simultaneous requests – 0 errors, p95 ≤ 2.3 s (v1: 16 s). 2,000 members in one minute collapsed. Details: `loadtest/RESULTS.md`.
+- **Not tested (needs owner input):** live Razorpay checkout/webhook/reconciliation (test keys), e-mail digests (Resend key), CAPTCHA (Turnstile site key), backup restore drill (repository secrets).
+- **Production:** untouched. Migrations 0005–0008 and the new functions are not applied/deployed to production; `main` unchanged.
