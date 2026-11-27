@@ -41,6 +41,38 @@ export interface Profile {
   registration_confirmed_at: string | null
 }
 
+export interface MyExam {
+  member_uid: string | null
+  exam_preference: 'online' | 'offline'
+  cohort_month: string
+  suggested_month: string
+  server_now: string
+  schedule: {
+    id: string
+    title: string
+    exam_starts_at: string
+    entry_closes_at: string
+    duration_minutes: number
+    upload_grace_minutes: number
+    max_marks: number
+    instructions: string | null
+    has_paper: boolean
+  } | null
+  readiness: { status: string; requested_at: string } | null
+  session: {
+    id: string
+    status: 'in_progress' | 'submitted' | 'expired'
+    started_at: string
+    deadline_at: string
+    upload_until: string
+    submitted_at: string | null
+    pages_count: number
+    question_paper_path: string | null
+    pages: { id: string; page_no: number; storage_path: string; size_bytes: number }[]
+  } | null
+  results: { exam_mode: 'online' | 'offline'; exam_date: string | null; marks: number | null; max_marks: number; remarks: string | null; result: 'pass' | 'fail' | 'absent' | 'withheld'; published_at: string }[]
+}
+
 export interface VideoLesson {
   id: string
   position: number

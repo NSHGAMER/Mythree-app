@@ -5,6 +5,8 @@ import {
   BarChart3,
   BookOpen,
   Bell,
+  CalendarClock,
+  GraduationCap,
   ClipboardList,
   Flame,
   HandHeart,
@@ -267,6 +269,7 @@ const memberNav = [
   { to: '/app/achievements', label: 'Achievements', icon: Award },
   { to: '/app/history', label: 'History', icon: ClipboardList },
   { to: '/app/final-exam', label: 'Final Exam', icon: ScrollText },
+  { to: '/app/exam', label: 'Exam & results', icon: GraduationCap },
 ]
 const mobileNav = [
   { to: '/app', label: 'Home', icon: Home, end: true },
@@ -407,6 +410,8 @@ const adminNav = [
   { to: '/admin/members', label: 'Members', icon: Users },
   { to: '/admin/registrations', label: 'Registrations & UIDs', icon: BadgeCheck },
   { to: '/admin/exams', label: 'Final exam & dispatch', icon: ScrollText },
+  { to: '/admin/exam-schedules', label: 'Exam schedules', icon: CalendarClock },
+  { to: '/admin/evaluation', label: 'Evaluation & results', icon: GraduationCap },
   { to: '/admin/chapters', label: 'Chapters & questions', icon: BookOpen },
   { to: '/admin/challenges', label: 'Daily & weekly tests', icon: Swords },
   { to: '/admin/videos', label: 'Video lessons', icon: PlayCircle },

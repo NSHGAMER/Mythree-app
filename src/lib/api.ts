@@ -7,6 +7,7 @@ import type {
   GradedResult,
   LeaderboardRow,
   MemberRow,
+  MyExam,
   RegistrationInfo,
   TestSession,
   VideoLesson,
@@ -78,6 +79,14 @@ export const api = {
     return data as Contribution[]
   },
 
+  // Examination
+  myExam: () => rpc<MyExam>('my_exam'),
+  startExam: () => rpc<Record<string, unknown>>('start_exam'),
+  registerExamPage: (sessionId: string, pageNo: number, path: string, size: number) =>
+    rpc<{ ok: boolean; pages_count: number }>('register_exam_page', { p_session: sessionId, p_page_no: pageNo, p_path: path, p_size: size }),
+  removeExamPage: (sessionId: string, pageNo: number) => rpc<{ removed_path: string | null }>('remove_exam_page', { p_session: sessionId, p_page_no: pageNo }),
+  submitExam: (sessionId: string) => rpc<Record<string, unknown>>('submit_exam', { p_session: sessionId }),
+
   // Video lessons
   myVideos: () => rpc<{ videos: VideoLesson[]; upcoming: { position: number; title: string; publish_at: string }[] }>('my_videos'),
   recordVideoProgress: (videoId: string, position: number) =>
@@ -143,6 +152,21 @@ export const api = {
         p_offset: p.offset ?? 0,
       }),
     videoStats: () => rpc<Record<string, unknown>[]>('admin_video_stats'),
+    examCohorts: () => rpc<Record<string, unknown>[]>('admin_exam_cohorts'),
+    examSubmissions: (schedule?: string, status?: string) =>
+      rpc<Record<string, unknown>[]>('admin_exam_submissions', { p_schedule: schedule || null, p_status: status || null }),
+    saveResult: (p: { user: string; schedule: string | null; mode: 'online' | 'offline'; examDate: string | null; marks: number | null; max: number; remarks: string; result: string; publish: boolean; overwrite?: boolean }) =>
+      rpc<Record<string, unknown>>('admin_save_result', {
+        p_user: p.user, p_schedule: p.schedule, p_mode: p.mode, p_exam_date: p.examDate, p_marks: p.marks, p_max: p.max,
+        p_remarks: p.remarks, p_result: p.result, p_publish: p.publish, p_overwrite_published: p.overwrite ?? false, p_source: 'manual',
+      }),
+    publishResults: (schedule: string) => rpc<number>('admin_publish_results', { p_schedule: schedule }),
+    importResults: (rows: Record<string, unknown>[], schedule: string | null, max: number, fileName: string, dryRun: boolean, publish: boolean) =>
+      rpc<{ rows_total: number; valid: number; applied: number; issues: { row: number; uid: string; issue: string }[]; preview: { row: number; uid: string; marks: number | null; result: string }[]; dry_run: boolean }>(
+        'admin_import_results',
+        { p_rows: rows, p_schedule: schedule, p_max: max, p_file_name: fileName, p_dry_run: dryRun, p_publish: publish },
+      ),
+    markPurged: (sessionId: string) => rpc('admin_mark_session_purged', { p_session: sessionId }),
     confirmRegistration: (userId: string, reference: string) =>
       rpc<string>('admin_confirm_registration', { p_user: userId, p_reference: reference }),
   },

@@ -48,6 +48,9 @@ const RegistrationPage = lazy(() => import('./pages/member/Registration'))
 const VideosPage = lazy(() => import('./pages/member/Videos'))
 const VideoLessonPage = lazy(() => import('./pages/member/VideoLesson'))
 const AdminVideos = lazy(() => import('./pages/admin/Videos'))
+const ExamRoomPage = lazy(() => import('./pages/member/ExamRoom'))
+const AdminExamSchedules = lazy(() => import('./pages/admin/ExamSchedules'))
+const AdminEvaluation = lazy(() => import('./pages/admin/Evaluation'))
 const AdminChallengeSets = lazy(() => import('./pages/admin/ChallengeSets'))
 const AdminRegistrations = lazy(() => import('./pages/admin/Registrations'))
 
@@ -132,6 +135,7 @@ export default function App() {
             <Route path="registration" element={<RegistrationPage />} />
             <Route path="videos" element={<VideosPage />} />
             <Route path="videos/:id" element={<VideoLessonPage />} />
+            <Route path="exam" element={<ExamRoomPage />} />
           </Route>
 
           <Route path="admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
@@ -140,6 +144,8 @@ export default function App() {
             <Route path="registrations" element={<AdminRegistrations />} />
             <Route path="videos" element={<AdminVideos />} />
             <Route path="challenges" element={<AdminChallengeSets />} />
+            <Route path="exam-schedules" element={<AdminExamSchedules />} />
+            <Route path="evaluation" element={<AdminEvaluation />} />
             <Route path="members/:id" element={<AdminMemberDetail />} />
             <Route path="exams" element={<AdminExams />} />
             <Route path="chapters" element={<AdminChapters />} />

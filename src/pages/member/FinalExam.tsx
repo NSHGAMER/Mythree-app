@@ -45,7 +45,12 @@ export default function FinalExamPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Final examination" sanskrit="अन्तिमपरीक्षा" subtitle="The final exam is written on paper. The question paper is posted to your registered address." />
+      <PageHeader
+        title="Final examination"
+        sanskrit="अन्तिमपरीक्षा"
+        subtitle="Confirm your readiness here. Online members write the exam on paper at home and upload photos; offline members receive the question paper by post."
+        actions={<Link to="/app/exam" className={buttonClass('primary', 'sm')}>Exam date, online exam & results</Link>}
+      />
 
       {req ? (
         <Card className="p-6 sm:p-8">
