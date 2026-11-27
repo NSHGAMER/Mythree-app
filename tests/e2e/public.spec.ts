@@ -81,7 +81,9 @@ test.describe('public pages', () => {
     await page.getByRole('button', { name: /Continue/ }).click()
     await expect(page.getByText('Enter your full name')).toBeVisible()
     await expect(page.getByText('Enter a valid email address')).toBeVisible()
-    await expect(page.getByText(/valid 10-digit Indian mobile/)).toBeVisible()
+    // step 1 is now About you (name, email, date of birth, exam preference); phone moved to step 2
+    await expect(page.getByText(/Enter your date of birth/)).toBeVisible()
+    await expect(page.getByText(/Choose online or offline/)).toBeVisible()
     await noHorizontalScroll(page)
   })
 })
@@ -122,6 +124,7 @@ test.describe('PWA', () => {
   test('service worker does not cache API or auth traffic', async ({ request }) => {
     const sw = await (await request.get('/sw.js')).text()
     expect(sw).not.toMatch(/supabase\.co/)
-    expect(sw).not.toMatch(/razorpay/)
+    // our own lazily loaded checkout helper (assets/razorpay-*.js) may be precached; Razorpay's servers must never be
+    expect(sw).not.toMatch(/checkout.razorpay.com|api.razorpay.com/)
   })
 })

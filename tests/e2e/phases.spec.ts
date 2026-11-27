@@ -79,3 +79,19 @@ test('admin: registrations, videos, challenge sets, exam schedules, evaluation p
     await shot(page, `p07-${path.split('/').pop()}`)
   }
 })
+
+test('registration asks for an English spelling when the name is in another script', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('mythree-splash', '1')
+    sessionStorage.removeItem('mythree-register-draft')
+    localStorage.setItem('mythree-cookie-consent', JSON.stringify({ necessary: true, preferences: true, analytics: false, decidedAt: new Date().toISOString() }))
+    localStorage.setItem('mythree-install-dismissed', String(Date.now()))
+  })
+  await page.goto('/register')
+  await expect(page.getByLabel('Name in English letters')).toHaveCount(0)
+  await page.getByLabel('Full name').fill('ಸುಬ್ರಹ್ಮಣ್ಯ')
+  await expect(page.getByLabel('Name in English letters')).toBeVisible()
+  await shot(page, 'p08-register-english-name')
+  await page.getByLabel('Full name').fill('Subramanya')
+  await expect(page.getByLabel('Name in English letters')).toHaveCount(0)
+})
