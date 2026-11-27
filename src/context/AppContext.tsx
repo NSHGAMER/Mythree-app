@@ -54,6 +54,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   contact_address: null,
   maintenance_mode: false,
   maintenance_message: null,
+  registration_fee: 151,
+  registration_payment_required: true,
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {

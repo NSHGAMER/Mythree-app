@@ -23,6 +23,13 @@ const MESSAGES: Record<string, string> = {
   OTP_INVALID: 'That code is not correct. Please check and try again.',
   OTP_EXPIRED: 'That code has expired. Please request a new one.',
   OTP_TOO_MANY_ATTEMPTS: 'Too many incorrect attempts. Please request a new code.',
+  REGISTRATION_PENDING: 'Please complete your ₹151 registration payment to unlock learning.',
+  GUARDIAN_PHONE_REQUIRED: 'Members under 18 must give a parent or guardian mobile number.',
+  PHONE_REQUIRED: 'Please enter your mobile number.',
+  PAYMENT_PENDING: 'Your payment is still being processed by the bank. Please check the status again in a minute.',
+  STATUS_CHECK_FAILED: 'We could not reach the payment gateway. Please try “Check payment status” again shortly.',
+  REFERENCE_REQUIRED: 'Enter the payment reference (receipt or transaction number).',
+  ORDER_FAILED: 'We could not start the payment. Please try again.',
   PAYMENT_VERIFICATION_FAILED: 'We could not verify this payment. If money was deducted, it will be reconciled automatically.',
 }
 

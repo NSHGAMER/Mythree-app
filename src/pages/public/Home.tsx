@@ -67,7 +67,7 @@ export default function HomePage() {
                 </Link>
               ) : (
                 <Link to="/register" className={buttonClass('primary', 'lg')}>
-                  Register free <ArrowRight className="size-5" />
+                  Register now <ArrowRight className="size-5" />
                 </Link>
               )}
               <Link to="/programme" className={buttonClass('outline', 'lg')}>
@@ -75,7 +75,7 @@ export default function HomePage() {
               </Link>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-2">
-              {['Free to learn – always', 'Learn at your own pace', 'Works on any phone'].map((t) => (
+              {['One-time ₹151 registration', 'Learn at your own pace', 'Works on any phone'].map((t) => (
                 <li key={t} className="flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-success" /> {t}
                 </li>
@@ -104,7 +104,7 @@ export default function HomePage() {
         </motion.div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: <UserPlus />, title: 'Register free', text: 'Create your account with your postal address so we can send your textbook.' },
+            { icon: <UserPlus />, title: 'Register', text: 'Create your account with your postal address and pay the one-time ₹151 registration fee.' },
             { icon: <PackageCheck />, title: 'Receive your textbook', text: 'The organisation posts the printed Sanskrit textbook to your home.' },
             { icon: <BookOpenCheck />, title: 'Read, then test', text: 'Study a chapter from the book, then take its test in the app to complete it.' },
             { icon: <ScrollText />, title: 'Final exam by post', text: 'Finish every chapter, tap “I am ready”, and your question paper is posted to you.' },
@@ -224,7 +224,7 @@ export default function HomePage() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-ink">Guru Dakshina · गुरुदक्षिणा</p>
                 <h2 className="mt-2 text-3xl text-ink">An offering of gratitude – entirely voluntary</h2>
                 <p className="mt-3 max-w-2xl text-ink-2">
-                  Learning on Mythree is free. If you wish, you may offer a Guru Dakshina (suggested ₹{settings?.suggested_contribution ?? 151}) to
+                  Beyond the one-time registration fee, if you wish, you may offer a Guru Dakshina (suggested ₹{settings?.suggested_contribution ?? 151}) to
                   support textbooks, postage and teachers. It never affects your access, tests, rewards or exam.
                 </p>
               </div>

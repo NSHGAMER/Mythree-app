@@ -81,7 +81,7 @@ export default function ProgrammePage() {
             ))}
           </ul>
           <Link to="/register" className={buttonClass('primary', 'lg', 'mt-8')}>
-            Register free
+            Register now
           </Link>
         </Card>
       </div>

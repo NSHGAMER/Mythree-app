@@ -72,7 +72,14 @@ export default function DashboardPage() {
             {g.en}, {firstName}
           </h1>
         </div>
-        <p className="text-sm text-ink-3">Learning since {fmtDate(p.start_date)}</p>
+        <div className="text-right text-sm text-ink-3">
+          {profile?.member_uid && (
+            <p>
+              Member ID <span className="ml-1 rounded-lg bg-maroon-soft px-2 py-0.5 font-mono font-bold text-maroon-ink">{profile.member_uid}</span>
+            </p>
+          )}
+          <p className="mt-1">Learning since {fmtDate(p.start_date)}</p>
+        </div>
       </div>
 
       {!d.profile.has_address && (
@@ -271,7 +278,7 @@ export default function DashboardPage() {
               <div>
                 <p className="font-semibold text-ink">Guru Dakshina</p>
                 <p className="mt-0.5 text-sm text-ink-3">
-                  {d.contributed_paise > 0 ? 'Thank you for your Guru Dakshina. 🙏' : `Voluntary · suggested ₹${d.settings.suggested_contribution}. Learning stays free either way.`}
+                  {d.contributed_paise > 0 ? 'Thank you for your Guru Dakshina. 🙏' : `Voluntary · suggested ₹${d.settings.suggested_contribution}. Optional and separate from the registration fee.`}
                 </p>
                 <Link to="/app/guru-dakshina" className="mt-2 inline-block text-sm font-semibold text-gold-ink hover:underline">Open Guru Dakshina →</Link>
               </div>

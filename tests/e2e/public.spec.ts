@@ -49,7 +49,7 @@ test.describe('public pages', () => {
 
   test('touch targets on primary actions are at least 40px tall', async ({ page }) => {
     await page.goto('/')
-    const box = await page.getByRole('link', { name: /Register free/ }).first().boundingBox()
+    const box = await page.getByRole('link', { name: /Register now/ }).first().boundingBox()
     expect(box!.height).toBeGreaterThanOrEqual(40)
   })
 

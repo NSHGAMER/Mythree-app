@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import {
   Award,
+  BadgeCheck,
   BarChart3,
   BookOpen,
   Bell,
@@ -28,7 +29,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { Suspense, useEffect, useState, type ReactNode } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { levelForXp } from '../lib/gamification'
@@ -178,7 +179,7 @@ export function PublicLayout() {
                 ) : (
                   <>
                     <Link to="/register" className={buttonClass('primary', 'lg')}>
-                      Register free
+                      Register
                     </Link>
                     <Link to="/login" className={buttonClass('outline', 'lg')}>
                       Login
@@ -311,9 +312,16 @@ function UserMenu({ admin = false }: { admin?: boolean }) {
   )
 }
 
+// Pages a member may open before the registration fee is verified.
+const PENDING_ALLOWED = ['/app/registration', '/app/settings', '/app/profile']
+
 export function MemberLayout() {
   const { profile } = useAuth()
+  const { pathname } = useLocation()
   const lvl = levelForXp(profile?.xp ?? 0)
+  if (profile && profile.role === 'member' && profile.registration_status && profile.registration_status !== 'confirmed' && !PENDING_ALLOWED.includes(pathname)) {
+    return <Navigate to="/app/registration" replace />
+  }
   return (
     <div className="min-h-dvh lg:pl-64">
       <ScrollToTop />
@@ -395,6 +403,7 @@ export function MemberLayout() {
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: BarChart3, end: true },
   { to: '/admin/members', label: 'Members', icon: Users },
+  { to: '/admin/registrations', label: 'Registrations & UIDs', icon: BadgeCheck },
   { to: '/admin/exams', label: 'Final exam & dispatch', icon: ScrollText },
   { to: '/admin/chapters', label: 'Chapters & questions', icon: BookOpen },
   { to: '/admin/contributions', label: 'Guru Dakshina', icon: IndianRupee },

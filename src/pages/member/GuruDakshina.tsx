@@ -92,7 +92,7 @@ export default function GuruDakshinaPage() {
       <PageHeader title="Guru Dakshina" sanskrit="गुरुदक्षिणा" subtitle="A voluntary offering of gratitude to support the programme." />
 
       <Alert tone="gold" icon={<Heart className="size-5" />} className="mb-6">
-        Guru Dakshina is <strong>completely voluntary</strong>. Your learning, tests, rewards and final exam are never affected by whether you contribute.
+        Guru Dakshina is <strong>completely voluntary</strong>. It is separate from the one-time registration fee, and your learning, tests, rewards and final exam are never affected by whether you contribute.
       </Alert>
 
       {phase === 'success' && paid ? (

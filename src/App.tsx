@@ -44,6 +44,8 @@ const SettingsPage = lazy(() => import('./pages/member/AccountSettings'))
 const GuruDakshinaPage = lazy(() => import('./pages/member/GuruDakshina'))
 const ReceiptPage = lazy(() => import('./pages/member/Receipt'))
 const FinalExamPage = lazy(() => import('./pages/member/FinalExam'))
+const RegistrationPage = lazy(() => import('./pages/member/Registration'))
+const AdminRegistrations = lazy(() => import('./pages/admin/Registrations'))
 
 // Admin
 const AdminOverview = lazy(() => import('./pages/admin/Overview'))
@@ -123,11 +125,13 @@ export default function App() {
             <Route path="guru-dakshina" element={<GuruDakshinaPage />} />
             <Route path="guru-dakshina/receipt/:id" element={<ReceiptPage />} />
             <Route path="final-exam" element={<FinalExamPage />} />
+            <Route path="registration" element={<RegistrationPage />} />
           </Route>
 
           <Route path="admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
             <Route index element={<AdminOverview />} />
             <Route path="members" element={<AdminMembers />} />
+            <Route path="registrations" element={<AdminRegistrations />} />
             <Route path="members/:id" element={<AdminMemberDetail />} />
             <Route path="exams" element={<AdminExams />} />
             <Route path="chapters" element={<AdminChapters />} />

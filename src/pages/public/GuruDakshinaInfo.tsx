@@ -29,15 +29,15 @@ export default function GuruDakshinaInfo() {
               Sign in to contribute
             </Link>
             <Link to="/register" className={buttonClass('outline', 'lg')}>
-              New here? Register free
+              New here? Register
             </Link>
           </div>
         </Card>
         <div className="mt-10 grid gap-5 sm:grid-cols-3">
           <Card className="p-5">
             <Unlock className="size-7 text-success" />
-            <p className="mt-3 font-semibold text-ink">Never required</p>
-            <p className="mt-1 text-sm text-ink-3">Registration, learning, tests, rewards and the final exam are all free.</p>
+            <p className="mt-3 font-semibold text-ink">Always optional</p>
+            <p className="mt-1 text-sm text-ink-3">Separate from the one-time registration fee – learning, tests, rewards and the exam never depend on it.</p>
           </Card>
           <Card className="p-5">
             <ShieldCheck className="size-7 text-info" />

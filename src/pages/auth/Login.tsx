@@ -103,7 +103,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-ink-3">
         New to Mythree?{' '}
         <Link to="/register" className="font-semibold text-maroon-ink hover:underline">
-          Register free
+          Register now
         </Link>
       </p>
     </AuthCard>

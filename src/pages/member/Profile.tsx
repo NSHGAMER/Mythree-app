@@ -20,7 +20,7 @@ export default function ProfilePage() {
           <span className="grid size-24 place-items-center rounded-full border-4 border-surface bg-gradient-to-br from-maroon to-gold font-display text-3xl text-white shadow-lg">{initials(profile.full_name)}</span>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl text-ink sm:text-3xl">{profile.full_name}</h1>
-            <p className="text-sm text-ink-3">Level {lvl.level} · {lvl.name} · <span lang="sa" className="sanskrit">{lvl.sanskrit}</span></p>
+            <p className="text-sm text-ink-3">{profile.member_uid && <span className="mr-2 font-mono font-bold text-maroon-ink">{profile.member_uid}</span>}Level {lvl.level} · {lvl.name} · <span lang="sa" className="sanskrit">{lvl.sanskrit}</span></p>
           </div>
           <Link to="/app/settings" className={buttonClass('secondary', 'sm')}><Settings className="size-4" /> Edit profile</Link>
         </div>

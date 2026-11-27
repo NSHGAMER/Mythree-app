@@ -23,12 +23,16 @@ Deno.serve(async (req) => {
 
   try {
     if (event.event === 'payment.captured' && p?.order_id) {
-      const { error } = await db.rpc('mark_contribution_paid', { p_order_id: p.order_id, p_payment_id: p.id, p_amount_paise: p.amount, p_method: p.method })
+      // Route by which table owns the order: registration fee or Guru Dakshina.
+      const { data: reg } = await db.from('registration_payments').select('id').eq('razorpay_order_id', p.order_id).maybeSingle()
+      const fn = reg ? 'mark_registration_paid' : 'mark_contribution_paid'
+      const { error } = await db.rpc(fn, { p_order_id: p.order_id, p_payment_id: p.id, p_amount_paise: p.amount, p_method: p.method })
       if (error && !/ORDER_NOT_FOUND/.test(error.message)) throw new Error(error.message)
-      log('webhook_captured', { order: p.order_id })
+      log('webhook_captured', { order: p.order_id, kind: reg ? 'registration' : 'contribution' })
     } else if (event.event === 'payment.failed' && p?.order_id) {
-      await db.rpc('mark_contribution_failed', { p_order_id: p.order_id, p_reason: p.error_description ?? 'payment_failed' })
-      log('webhook_failed', { order: p.order_id })
+      const { data: reg } = await db.from('registration_payments').select('id').eq('razorpay_order_id', p.order_id).maybeSingle()
+      await db.rpc(reg ? 'mark_registration_failed' : 'mark_contribution_failed', { p_order_id: p.order_id, p_reason: p.error_description ?? 'payment_failed' })
+      log('webhook_failed', { order: p.order_id, kind: reg ? 'registration' : 'contribution' })
     }
     return new Response('ok', { status: 200 })
   } catch (e) {

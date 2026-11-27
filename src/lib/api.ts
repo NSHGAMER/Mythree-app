@@ -7,6 +7,7 @@ import type {
   GradedResult,
   LeaderboardRow,
   MemberRow,
+  RegistrationInfo,
   TestSession,
 } from '../types'
 
@@ -76,6 +77,18 @@ export const api = {
     return data as Contribution[]
   },
 
+  // Registration fee (mandatory ₹151)
+  myRegistration: () => rpc<RegistrationInfo>('my_registration'),
+  registrationOrder: (idempotencyKey: string) =>
+    invoke<
+      | { status: 'confirmed'; member_uid: string }
+      | { status: 'pending'; order_id: string; key_id: string; amount_paise: number; currency: string; payment_id: string; prefill: Record<string, string | undefined> }
+    >('registration-order', { idempotency_key: idempotencyKey }),
+  registrationVerify: (p: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    invoke<{ verified: boolean; duplicate?: boolean; member_uid?: string }>('registration-verify', p),
+  registrationStatus: () =>
+    invoke<{ status: 'confirmed' | 'pending' | 'processing'; member_uid?: string; recovered?: boolean; gateway?: string }>('registration-status'),
+
   // Edge functions
   sendOtp: () => invoke<{ sent: boolean; expires_in: number; resend_in: number }>('otp-send'),
   verifyOtp: (code: string) => invoke<{ verified: boolean }>('otp-verify', { code }),
@@ -116,5 +129,14 @@ export const api = {
     setRole: (id: string, role: 'admin' | 'member') => rpc('admin_set_role', { p_user: id, p_role: role }),
     saveQuestion: (q: Record<string, unknown>) => rpc<string>('admin_save_question', { p_question: q }),
     reorderChapters: (ids: string[]) => rpc('admin_reorder_chapters', { p_ids: ids }),
+    registrations: (p: { search?: string; status?: string; limit?: number; offset?: number }) =>
+      rpc<{ total: number; rows: Record<string, unknown>[] }>('admin_registrations', {
+        p_search: p.search || null,
+        p_status: p.status || null,
+        p_limit: p.limit ?? 50,
+        p_offset: p.offset ?? 0,
+      }),
+    confirmRegistration: (userId: string, reference: string) =>
+      rpc<string>('admin_confirm_registration', { p_user: userId, p_reference: reference }),
   },
 }

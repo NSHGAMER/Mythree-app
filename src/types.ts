@@ -32,6 +32,33 @@ export interface Profile {
   show_on_leaderboard: boolean
   avatar_seed: string | null
   created_at: string
+  date_of_birth: string | null
+  guardian_name: string | null
+  guardian_phone: string | null
+  exam_preference: 'online' | 'offline'
+  member_uid: string | null
+  registration_status: 'pending_payment' | 'confirmed' | 'cancelled'
+  registration_confirmed_at: string | null
+}
+
+export interface RegistrationInfo {
+  status: 'pending_payment' | 'confirmed' | 'cancelled'
+  member_uid: string | null
+  confirmed_at: string | null
+  fee: number
+  payment_required: boolean
+  exam_preference: 'online' | 'offline'
+  payments: {
+    id: string
+    status: 'created' | 'paid' | 'failed' | 'refunded'
+    amount_paise: number
+    razorpay_order_id: string | null
+    razorpay_payment_id: string | null
+    receipt_no: string | null
+    created_at: string
+    paid_at: string | null
+    failure_reason: string | null
+  }[]
 }
 
 export interface AppSettings {
@@ -51,6 +78,8 @@ export interface AppSettings {
   contact_address: string | null
   maintenance_mode: boolean
   maintenance_message: string | null
+  registration_fee: number
+  registration_payment_required: boolean
 }
 
 export interface ChapterCard {

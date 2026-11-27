@@ -1,36 +1,65 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, Check, MailCheck, UserPlus } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { ArrowLeft, ArrowRight, Check, IndianRupee, MailCheck, MonitorSmartphone, School, UserPlus } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Alert, Button, cx, Input, Select } from '../../components/ui'
+import { useApp } from '../../context/AppContext'
 import { useDocumentTitle } from '../../hooks/useAsync'
-import { api } from '../../lib/api'
 import { friendlyError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
-import { fieldErrors, INDIAN_STATES, normalizeIndianMobile, passwordStrength, registerSchema, type RegisterInput } from '../../lib/validation'
+import { ageFromDob, fieldErrors, INDIAN_STATES, memberUidBase, normalizeIndianMobile, passwordStrength, registerSchema, type RegisterInput } from '../../lib/validation'
 import { AuthCard, PasswordInput } from './Login'
 
-const STEPS = ['About you', 'Address', 'Security']
+const STEPS = ['About you', 'Contact & address', 'Security']
 const STEP_FIELDS: (keyof RegisterInput)[][] = [
-  ['full_name', 'email', 'phone', 'age'],
-  ['address_line1', 'address_line2', 'city', 'state', 'pincode'],
+  ['full_name', 'email', 'date_of_birth', 'exam_preference'],
+  ['phone', 'guardian_name', 'guardian_phone', 'address_line1', 'address_line2', 'city', 'state', 'pincode'],
   ['password', 'confirm_password', 'accept_terms'],
 ]
+const DRAFT_KEY = 'mythree-register-draft'
+const EMPTY = {
+  full_name: '', email: '', date_of_birth: '', exam_preference: '', phone: '', guardian_name: '', guardian_phone: '',
+  address_line1: '', address_line2: '', city: '', state: 'Karnataka', pincode: '',
+  password: '', confirm_password: '', accept_terms: false as boolean,
+}
+
+/** Form input survives refreshes and network failures (passwords are never stored). */
+function loadDraft(): typeof EMPTY {
+  try {
+    const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}')
+    return { ...EMPTY, ...d, password: '', confirm_password: '' }
+  } catch {
+    return EMPTY
+  }
+}
 
 export default function RegisterPage() {
   useDocumentTitle('Register')
+  const { settings } = useApp()
+  const fee = settings?.registration_fee ?? 151
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState<Record<string, string | boolean>>({
-    full_name: '', email: '', phone: '', age: '', address_line1: '', address_line2: '', city: '', state: 'Karnataka', pincode: '',
-    password: '', confirm_password: '', accept_terms: false,
-  })
+  const [form, setForm] = useState<Record<string, string | boolean>>(loadDraft)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<string | null>(null)
 
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, confirm_password, ...safe } = form
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(safe))
+    } catch {
+      /* storage unavailable */
+    }
+  }, [form])
+
   const set = (k: string) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const strength = passwordStrength(String(form.password))
+  const age = ageFromDob(String(form.date_of_birth))
+  const isMinor = age !== null && age < 18
+  const today = new Date().toISOString().slice(0, 10)
+  const uidPreview = memberUidBase(String(form.full_name), normalizeIndianMobile(String(isMinor ? form.guardian_phone : form.phone)) ?? '')
 
   function validateStep(s: number) {
     const parsed = registerSchema.safeParse(form)
@@ -41,27 +70,9 @@ export default function RegisterPage() {
     return Object.keys(relevant).length === 0
   }
 
-  async function next() {
+  function next() {
     setErr('')
     if (!validateStep(step)) return
-    if (step === 0) {
-      const phone = normalizeIndianMobile(String(form.phone))
-      if (phone) {
-        setBusy(true)
-        try {
-          const ok = await api.phoneAvailable(phone)
-          if (!ok) {
-            setErrors({ phone: 'This mobile number is already registered. Try signing in instead.' })
-            return
-          }
-        } catch (e) {
-          setErr(friendlyError(e))
-          return
-        } finally {
-          setBusy(false)
-        }
-      }
-    }
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
   }
 
@@ -77,6 +88,7 @@ export default function RegisterPage() {
       return
     }
     const d = parsed.data
+    const minor = (ageFromDob(d.date_of_birth) ?? 99) < 18
     setBusy(true)
     setErr('')
     const { data, error } = await supabase.auth.signUp({
@@ -86,8 +98,11 @@ export default function RegisterPage() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           full_name: d.full_name,
-          phone: d.phone,
-          age: String(d.age),
+          date_of_birth: d.date_of_birth,
+          exam_preference: d.exam_preference,
+          phone: d.phone || '',
+          guardian_name: minor ? d.guardian_name || '' : '',
+          guardian_phone: minor ? d.guardian_phone || '' : '',
           address_line1: d.address_line1,
           address_line2: d.address_line2 || '',
           city: d.city,
@@ -99,24 +114,29 @@ export default function RegisterPage() {
     })
     setBusy(false)
     if (error) return setErr(friendlyError(error))
-    // With email confirmation on, an existing email returns a user with no identities.
     if (data.user && data.user.identities && data.user.identities.length === 0) {
-      return setErr('An account with this email already exists. Please sign in or reset your password.')
+      return setErr('An account with this email already exists. Please sign in (or use “Resend verification email”) to continue your registration.')
+    }
+    try {
+      sessionStorage.removeItem(DRAFT_KEY)
+    } catch {
+      /* ignore */
     }
     setDone(d.email)
   }
 
   if (done) {
     return (
-      <AuthCard title="Check your email" subtitle="One last step to activate your account">
+      <AuthCard title="Check your email" subtitle="Two short steps to activate your membership">
         <div className="text-center">
           <div className="mx-auto grid size-20 place-items-center rounded-full bg-success-soft text-success">
             <MailCheck className="size-10" />
           </div>
-          <p className="mt-5 text-ink-2">
-            We sent a verification link to <strong className="text-ink">{done}</strong>. Open it to verify your email, then sign in.
-          </p>
-          <p className="mt-3 text-sm text-ink-3">Can’t find it? Check your spam or promotions folder.</p>
+          <ol className="mt-5 space-y-2 text-left text-sm text-ink-2">
+            <li><strong className="text-ink">1.</strong> Open the verification link we sent to <strong className="text-ink">{done}</strong>.</li>
+            <li><strong className="text-ink">2.</strong> Sign in and pay the ₹{fee} registration fee to receive your member ID and unlock learning.</li>
+          </ol>
+          <p className="mt-3 text-sm text-ink-3">Can’t find the email? Check spam or promotions.</p>
           <Link to="/login" className="mt-6 inline-block font-semibold text-maroon-ink hover:underline">
             Go to login →
           </Link>
@@ -126,7 +146,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthCard title="Join Mythree" subtitle="Free registration · your textbook is posted to your address">
+    <AuthCard title="Join Mythree" subtitle={<>Registration fee ₹{fee} · your textbook is posted to your address</>}>
       <ol className="mb-7 flex items-center gap-2" aria-label="Registration steps">
         {STEPS.map((s, i) => (
           <li key={s} className="flex flex-1 items-center gap-2">
@@ -146,14 +166,41 @@ export default function RegisterPage() {
               <>
                 <Input label="Full name" autoComplete="name" value={String(form.full_name)} onChange={set('full_name')} error={errors.full_name} required />
                 <Input label="Email" type="email" inputMode="email" autoComplete="email" value={String(form.email)} onChange={set('email')} error={errors.email} required />
-                <div className="grid grid-cols-[1fr_7rem] gap-3">
-                  <Input label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210" value={String(form.phone)} onChange={set('phone')} error={errors.phone} hint="Indian mobile, 10 digits" required />
-                  <Input label="Age" type="number" inputMode="numeric" min={5} max={120} value={String(form.age)} onChange={set('age')} error={errors.age} required />
-                </div>
+                <Input label="Date of birth" type="date" max={today} min="1900-01-01" autoComplete="bday" value={String(form.date_of_birth)} onChange={set('date_of_birth')} error={errors.date_of_birth} hint={age !== null ? `Age ${age}${isMinor ? ' – a parent or guardian contact will be needed' : ''}` : undefined} required />
+                <fieldset>
+                  <legend className="mb-1.5 text-sm font-semibold text-ink-2">Final exam preference<span className="ml-0.5 text-maroon">*</span></legend>
+                  <div className="grid grid-cols-2 gap-3" role="radiogroup">
+                    {([['online', 'Online', MonitorSmartphone, 'Write at home, upload photos'], ['offline', 'Offline', School, 'Paper exam by post']] as const).map(([v, l, Icon, d]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        role="radio"
+                        aria-checked={form.exam_preference === v}
+                        onClick={() => setForm((f) => ({ ...f, exam_preference: v }))}
+                        className={cx('rounded-2xl border-2 p-3 text-left transition', form.exam_preference === v ? 'border-maroon bg-maroon-soft' : 'border-line hover:border-line-strong')}
+                      >
+                        <Icon className="size-5 text-maroon" />
+                        <span className="mt-1 block font-semibold text-ink">{l}</span>
+                        <span className="block text-xs text-ink-3">{d}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {errors.exam_preference && <p className="mt-1 text-xs font-medium text-danger">{errors.exam_preference}</p>}
+                </fieldset>
               </>
             )}
             {step === 1 && (
               <>
+                {isMinor ? (
+                  <>
+                    <p className="rounded-xl bg-info-soft px-3 py-2 text-xs text-info">Members under 18 register with a parent or guardian's mobile number. Brothers and sisters may use the same number.</p>
+                    <Input label="Parent / guardian name" value={String(form.guardian_name)} onChange={set('guardian_name')} error={errors.guardian_name} required />
+                    <Input label="Parent / guardian mobile" type="tel" inputMode="tel" placeholder="98765 43210" value={String(form.guardian_phone)} onChange={set('guardian_phone')} error={errors.guardian_phone} required />
+                    <Input label="Your own mobile (optional)" type="tel" inputMode="tel" value={String(form.phone)} onChange={set('phone')} error={errors.phone} />
+                  </>
+                ) : (
+                  <Input label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210" value={String(form.phone)} onChange={set('phone')} error={errors.phone} hint="Indian mobile, 10 digits" required />
+                )}
                 <p className="rounded-xl bg-gold-soft px-3 py-2 text-xs text-gold-ink">Your textbook and final exam paper will be posted to this address.</p>
                 <Input label="House / flat, street" autoComplete="address-line1" value={String(form.address_line1)} onChange={set('address_line1')} error={errors.address_line1} required />
                 <Input label="Area / landmark (optional)" autoComplete="address-line2" value={String(form.address_line2)} onChange={set('address_line2')} error={errors.address_line2} />
@@ -178,6 +225,10 @@ export default function RegisterPage() {
                   </div>
                 )}
                 <PasswordInput label="Confirm password" autoComplete="new-password" value={String(form.confirm_password)} onChange={set('confirm_password')} error={errors.confirm_password} required />
+                <div className="rounded-2xl border border-gold/40 bg-gold-soft/50 p-3 text-sm text-ink-2">
+                  <p className="flex items-center gap-1.5 font-semibold text-ink"><IndianRupee className="size-4" /> Registration fee: ₹{fee}</p>
+                  <p className="mt-1 text-xs">After verifying your email you'll pay securely via Razorpay. Your member ID will look like <span className="font-mono font-semibold text-maroon-ink">{uidPreview}</span>.</p>
+                </div>
                 <label className="flex items-start gap-3 text-sm text-ink-2">
                   <input type="checkbox" checked={Boolean(form.accept_terms)} onChange={(e) => setForm((f) => ({ ...f, accept_terms: e.target.checked }))} className="mt-0.5 size-5 accent-[var(--maroon)]" />
                   <span>
@@ -197,7 +248,7 @@ export default function RegisterPage() {
             </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <Button type="submit" className="flex-1" loading={busy}>
+            <Button type="submit" className="flex-1">
               Continue <ArrowRight className="size-4" />
             </Button>
           ) : (

@@ -8,7 +8,7 @@ import { useDocumentTitle } from '../../hooks/useAsync'
 import { api } from '../../lib/api'
 import { friendlyError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
-import { fieldErrors, INDIAN_STATES, passwordSchema, profileSchema } from '../../lib/validation'
+import { ageFromDob, fieldErrors, INDIAN_STATES, passwordSchema, profileSchema } from '../../lib/validation'
 import { PasswordInput } from '../auth/Login'
 
 export default function AccountSettingsPage() {
@@ -19,7 +19,10 @@ export default function AccountSettingsPage() {
   const [form, setForm] = useState({
     full_name: profile?.full_name ?? '',
     phone: profile?.phone?.replace(/^\+91/, '') ?? '',
-    age: String(profile?.age ?? ''),
+    date_of_birth: profile?.date_of_birth ?? '',
+    exam_preference: profile?.exam_preference ?? 'offline',
+    guardian_name: profile?.guardian_name ?? '',
+    guardian_phone: profile?.guardian_phone?.replace(/^[+]91/, '') ?? '',
     address_line1: profile?.address_line1 ?? '',
     address_line2: profile?.address_line2 ?? '',
     city: profile?.city ?? '',
@@ -48,7 +51,7 @@ export default function AccountSettingsPage() {
     const d = parsed.data
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: d.full_name, phone: d.phone, age: d.age, address_line1: d.address_line1, address_line2: d.address_line2 || null, city: d.city, state: d.state, pincode: d.pincode })
+      .update({ full_name: d.full_name, phone: d.phone || null, date_of_birth: d.date_of_birth, age: ageFromDob(d.date_of_birth), exam_preference: d.exam_preference, guardian_name: d.guardian_name || null, guardian_phone: d.guardian_phone || null, address_line1: d.address_line1, address_line2: d.address_line2 || null, city: d.city, state: d.state, pincode: d.pincode })
       .eq('id', profile!.id)
     setSaving(false)
     if (error) return toast(friendlyError(error), 'error')
@@ -99,11 +102,19 @@ export default function AccountSettingsPage() {
         <h2 className="mb-5 text-xl text-ink">Personal details</h2>
         <form onSubmit={saveProfile} className="space-y-4" noValidate>
           <Input label="Full name" value={form.full_name} onChange={set('full_name')} error={errors.full_name} required autoComplete="name" />
-          <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
-            <Input label="Mobile number" type="tel" value={form.phone} onChange={set('phone')} error={errors.phone} required hint="Changing it requires verifying again" />
-            <Input label="Age" type="number" value={form.age} onChange={set('age')} error={errors.age} required />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input label="Date of birth" type="date" max={new Date().toISOString().slice(0, 10)} value={form.date_of_birth} onChange={set('date_of_birth')} error={errors.date_of_birth} required />
+            <Select label="Final exam preference" value={form.exam_preference} onChange={set('exam_preference')} options={[{ value: 'online', label: 'Online' }, { value: 'offline', label: 'Offline (paper by post)' }]} />
           </div>
+          <Input label={(ageFromDob(form.date_of_birth) ?? 18) < 18 ? 'Your own mobile (optional)' : 'Mobile number'} type="tel" value={form.phone} onChange={set('phone')} error={errors.phone} hint="Changing it requires verifying again" />
+          {(ageFromDob(form.date_of_birth) ?? 18) < 18 && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Parent / guardian name" value={form.guardian_name} onChange={set('guardian_name')} error={errors.guardian_name} required />
+              <Input label="Parent / guardian mobile" type="tel" value={form.guardian_phone} onChange={set('guardian_phone')} error={errors.guardian_phone} required />
+            </div>
+          )}
           <Input label="Email" value={profile.email} disabled hint="Contact us to change your email address" />
+          {profile.member_uid && <Input label="Member ID (permanent)" value={profile.member_uid} disabled />}
           <h3 className="pt-3 text-lg text-ink">Postal address</h3>
           <Input label="House / flat, street" value={form.address_line1} onChange={set('address_line1')} error={errors.address_line1} required autoComplete="address-line1" />
           <Input label="Area / landmark" value={form.address_line2} onChange={set('address_line2')} error={errors.address_line2} autoComplete="address-line2" />

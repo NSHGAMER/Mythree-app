@@ -44,5 +44,8 @@ export const createOrder = (amountPaise: number, receipt: string, notes: Record<
 
 export const fetchPayment = (id: string) => rz<RzPayment>(`/payments/${encodeURIComponent(id)}`)
 
-export const capturePayment = (id: string, amountPaise: number) =>
+export const fetchOrderPayments = async (orderId: string) =>
+  (await rz<{ items: RzPayment[] }>(`/orders/${encodeURIComponent(orderId)}/payments`)).items ?? []
+
+export const capturePayment =(id: string, amountPaise: number) =>
   rz<RzPayment>(`/payments/${encodeURIComponent(id)}/capture`, { method: 'POST', body: JSON.stringify({ amount: amountPaise, currency: 'INR' }) })

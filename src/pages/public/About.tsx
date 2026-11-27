@@ -55,7 +55,7 @@ export default function AboutPage() {
             { icon: Home, t: 'Learning at home', d: 'Textbooks delivered to your doorstep.' },
             { icon: Users, t: 'For every age', d: 'Children, parents and grandparents together.' },
             { icon: BookHeart, t: 'Structured path', d: 'Chapter by chapter, with clear goals.' },
-            { icon: HeartHandshake, t: 'Free to learn', d: 'Guru Dakshina is always voluntary.' },
+            { icon: HeartHandshake, t: 'One small fee', d: 'A one-time ₹151 registration; Guru Dakshina is always voluntary.' },
           ].map(({ icon: Icon, t, d }) => (
             <Card key={t} className="p-5">
               <Icon className="size-7 text-maroon" />
