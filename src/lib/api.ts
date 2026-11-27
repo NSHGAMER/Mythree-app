@@ -9,6 +9,7 @@ import type {
   MemberRow,
   RegistrationInfo,
   TestSession,
+  VideoLesson,
 } from '../types'
 
 async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
@@ -77,6 +78,11 @@ export const api = {
     return data as Contribution[]
   },
 
+  // Video lessons
+  myVideos: () => rpc<{ videos: VideoLesson[]; upcoming: { position: number; title: string; publish_at: string }[] }>('my_videos'),
+  recordVideoProgress: (videoId: string, position: number) =>
+    rpc<{ watched_seconds: number; completed: boolean; percent: number }>('record_video_progress', { p_video_id: videoId, p_position: position }),
+
   // Registration fee (mandatory ₹151)
   myRegistration: () => rpc<RegistrationInfo>('my_registration'),
   registrationOrder: (idempotencyKey: string) =>
@@ -136,6 +142,7 @@ export const api = {
         p_limit: p.limit ?? 50,
         p_offset: p.offset ?? 0,
       }),
+    videoStats: () => rpc<Record<string, unknown>[]>('admin_video_stats'),
     confirmRegistration: (userId: string, reference: string) =>
       rpc<string>('admin_confirm_registration', { p_user: userId, p_reference: reference }),
   },

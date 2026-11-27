@@ -41,6 +41,23 @@ export interface Profile {
   registration_confirmed_at: string | null
 }
 
+export interface VideoLesson {
+  id: string
+  position: number
+  title: string
+  title_sanskrit: string | null
+  description: string | null
+  provider: 'youtube' | 'url'
+  video_ref: string
+  duration_seconds: number
+  completion_percentage: number
+  publish_at: string
+  chapter_id: string | null
+  watched_seconds: number
+  last_position: number
+  completed_at: string | null
+}
+
 export interface RegistrationInfo {
   status: 'pending_payment' | 'confirmed' | 'cancelled'
   member_uid: string | null
