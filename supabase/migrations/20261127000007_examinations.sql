@@ -236,17 +236,20 @@ begin
   if v_uid is null then raise exception 'NOT_AUTHENTICATED' using errcode = '28000'; end if;
   select * into v_p from public.profiles where id = v_uid;
   if v_p.registration_status <> 'confirmed' then raise exception 'REGISTRATION_PENDING' using errcode = 'P0001'; end if;
-  if v_p.exam_preference <> 'online' then raise exception 'NOT_ONLINE_EXAM' using errcode = 'P0001'; end if;
-  if not exists (select 1 from public.exam_requests where user_id = v_uid and status in ('approved', 'paper_dispatched', 'delivered')) then
-    raise exception 'EXAM_NOT_APPROVED' using errcode = 'P0001';
-  end if;
   v_s := public.member_exam_schedule(v_uid);
   if v_s.id is null or not v_s.is_published then raise exception 'EXAM_NOT_SCHEDULED' using errcode = 'P0001'; end if;
 
+  -- An existing session is always resumable (e.g. after a refresh), even if the readiness status changed since START.
   select * into v_sess from public.exam_sessions where user_id = v_uid and schedule_id = v_s.id for update;
   if found then
     perform public.expire_exam_session(v_sess.id);
-    return (select to_jsonb(s) || jsonb_build_object('already_started', true, 'server_now', now()) from public.exam_sessions s where s.id = v_sess.id);
+    return (select to_jsonb(s) || jsonb_build_object('already_started', true, 'server_now', now(),
+              'question_paper_path', case when s.status = 'in_progress' then v_s.question_paper_path end)
+            from public.exam_sessions s where s.id = v_sess.id);
+  end if;
+  if v_p.exam_preference <> 'online' then raise exception 'NOT_ONLINE_EXAM' using errcode = 'P0001'; end if;
+  if not exists (select 1 from public.exam_requests where user_id = v_uid and status in ('approved', 'paper_dispatched', 'delivered')) then
+    raise exception 'EXAM_NOT_APPROVED' using errcode = 'P0001';
   end if;
   if now() < v_s.exam_starts_at then raise exception 'EXAM_NOT_OPEN' using errcode = 'P0001'; end if;
   if now() > v_s.entry_closes_at then raise exception 'EXAM_ENTRY_CLOSED' using errcode = 'P0001'; end if;
@@ -435,7 +438,16 @@ begin
       v_issues := v_issues || jsonb_build_object('row', v_i, 'uid', r->>'uid', 'issue', 'Marks is not a number');
       continue;
     end;
-    v_date := coalesce(nullif(r->>'exam_date', '')::date, v_sched.exam_starts_at::date);
+    -- a bad date or exam mode in one row must not abort the whole import
+    begin
+      v_date := coalesce(nullif(trim(coalesce(r->>'exam_date', '')), '')::date, v_sched.exam_starts_at::date);
+      if nullif(trim(coalesce(r->>'exam_mode', '')), '') is not null then
+        v_mode := lower(trim(r->>'exam_mode'))::public.exam_mode;
+      end if;
+    exception when others then
+      v_issues := v_issues || jsonb_build_object('row', v_i, 'uid', r->>'uid', 'issue', 'Exam date or mode is not valid');
+      continue;
+    end;
     if v_user is null then
       v_issues := v_issues || jsonb_build_object('row', v_i, 'uid', r->>'uid', 'issue', 'Unknown UID');
     elsif upper(trim(r->>'uid')) = any (v_seen) then
@@ -452,7 +464,7 @@ begin
       v_seen := v_seen || upper(trim(r->>'uid'));
       v_ok := v_ok || jsonb_build_object('row', v_i, 'uid', upper(trim(r->>'uid')), 'marks', v_marks, 'result', v_status);
       if not p_dry_run then
-        perform public.admin_save_result(v_user, p_schedule, coalesce((r->>'exam_mode')::public.exam_mode, v_mode), v_date,
+        perform public.admin_save_result(v_user, p_schedule, v_mode, v_date,
           v_marks, p_max, r->>'remarks', v_status::public.exam_result_status, p_publish, false, 'import');
         v_applied := v_applied + 1;
       end if;

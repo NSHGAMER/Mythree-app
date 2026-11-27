@@ -84,7 +84,7 @@ declare v_week_start timestamptz := (date_trunc('week', (now() at time zone 'Asi
 begin
   -- only one refresher at a time; others simply keep reading the current snapshot
   if not pg_try_advisory_xact_lock(hashtext('mythree:refresh_leaderboard')) then return 0; end if;
-  delete from public.leaderboard_snapshot;
+  delete from public.leaderboard_snapshot where true; -- explicit WHERE: pg_safeupdate rejects bare DELETE for API roles
   insert into public.leaderboard_snapshot (period, user_id, rank, score, name, streak, avatar_seed, visible)
   select per.p, s.id, rank() over (partition by per.p order by case per.p when 'week' then coalesce(w.total, 0) else s.xp end desc),
          case per.p when 'week' then coalesce(w.total, 0) else s.xp end,

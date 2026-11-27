@@ -361,4 +361,5 @@ grant execute on function public.admin_confirm_registration(uuid, text) to authe
 
 -- The phone pre-check is no longer used by registration (phones are not unique); keep it callable
 -- only by signed-in users to remove the anonymous enumeration surface.
-revoke execute on function public.check_phone_available(text) from anon;
+revoke execute on function public.check_phone_available(text) from public, anon;
+grant execute on function public.check_phone_available(text) to authenticated;
