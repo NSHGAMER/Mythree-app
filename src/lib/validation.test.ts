@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ageFromDob, fieldErrors, memberUidBase, normalizeIndianMobile, passwordStrength, profileSchema, registerSchema } from './validation'
+import { ageFromDob, fieldErrors, memberUidBase, needsEnglishName, normalizeIndianMobile, passwordStrength, profileSchema, registerSchema } from './validation'
 
 describe('normalizeIndianMobile', () => {
   it.each([
@@ -126,5 +126,26 @@ describe('passwordStrength', () => {
     expect(passwordStrength('abc').score).toBe(0)
     expect(passwordStrength('abcdefgh').score).toBe(1)
     expect(passwordStrength('Abcdefgh12!x').score).toBe(4)
+  })
+})
+
+describe('English spelling for member IDs (names in other scripts)', () => {
+  it('detects names that need an English spelling', () => {
+    expect(needsEnglishName('सुब्रह्मण्य')).toBe(true)
+    expect(needsEnglishName('ಸುಬ್ರಹ್ಮಣ್ಯ')).toBe(true)
+    expect(needsEnglishName('Subramanya H')).toBe(false)
+  })
+  it('requires the English spelling when the name is not in English letters', () => {
+    const r = registerSchema.safeParse({ ...adult, full_name: 'सुब्रह्मण्य', name_english: '' })
+    expect(r.success).toBe(false)
+    if (!r.success) expect(fieldErrors(r.error).name_english).toMatch(/English/)
+    expect(registerSchema.safeParse({ ...adult, full_name: 'सुब्रह्मण्य', name_english: 'Subramanya' }).success).toBe(true)
+  })
+  it('rejects non-English letters in the English spelling', () => {
+    const r = registerSchema.safeParse({ ...adult, full_name: 'सुब्रह्मण्य', name_english: 'सुब्र' })
+    expect(r.success).toBe(false)
+  })
+  it('the English spelling drives the UID preview', () => {
+    expect(memberUidBase('Subramanya', '+919845011234')).toBe('SUBR1234')
   })
 })

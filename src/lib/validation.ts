@@ -66,6 +66,17 @@ export function memberUidBase(fullName: string, applicablePhone: string | null |
   return letters + digits
 }
 
+/** True when the name uses letters outside English (e.g. Kannada or Devanagari). */
+export const needsEnglishName = (fullName: string) => /[^\x01-\x7F]/.test(fullName ?? '')
+
+const englishName = z
+  .string()
+  .trim()
+  .max(100)
+  .optional()
+  .or(z.literal(''))
+  .refine((v) => !v || /^[A-Za-z][A-Za-z .'-]*$/.test(v), 'Use English letters only (A–Z)')
+
 const optionalPhone = z
   .string()
   .trim()
@@ -97,6 +108,7 @@ function contactRules(v: { date_of_birth: string; phone: string; guardian_name?:
 export const registerSchema = z
   .object({
     full_name: name,
+    name_english: englishName,
     email: z.string().trim().toLowerCase().email('Enter a valid email address').max(200),
     date_of_birth: dobField,
     exam_preference: z.enum(['online', 'offline'], { message: 'Choose online or offline' }),
@@ -110,6 +122,8 @@ export const registerSchema = z
   .merge(addressSchema)
   .superRefine((v, ctx) => {
     contactRules(v, ctx)
+    if (needsEnglishName(v.full_name) && !v.name_english)
+      ctx.addIssue({ code: 'custom', path: ['name_english'], message: 'Enter your name in English letters – it is used for your member ID' })
     if (v.password !== v.confirm_password) ctx.addIssue({ code: 'custom', path: ['confirm_password'], message: 'Passwords do not match' })
   })
 

@@ -14,6 +14,7 @@ export interface Profile {
   id: string
   email: string
   full_name: string
+  name_english?: string | null
   phone: string | null
   phone_verified_at: string | null
   age: number | null

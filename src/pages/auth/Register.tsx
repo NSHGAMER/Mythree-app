@@ -7,18 +7,18 @@ import { useApp } from '../../context/AppContext'
 import { useDocumentTitle } from '../../hooks/useAsync'
 import { friendlyError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
-import { ageFromDob, fieldErrors, INDIAN_STATES, memberUidBase, normalizeIndianMobile, passwordStrength, registerSchema, type RegisterInput } from '../../lib/validation'
+import { ageFromDob, fieldErrors, INDIAN_STATES, memberUidBase, needsEnglishName, normalizeIndianMobile, passwordStrength, registerSchema, type RegisterInput } from '../../lib/validation'
 import { AuthCard, PasswordInput } from './Login'
 
 const STEPS = ['About you', 'Contact & address', 'Security']
 const STEP_FIELDS: (keyof RegisterInput)[][] = [
-  ['full_name', 'email', 'date_of_birth', 'exam_preference'],
+  ['full_name', 'name_english', 'email', 'date_of_birth', 'exam_preference'],
   ['phone', 'guardian_name', 'guardian_phone', 'address_line1', 'address_line2', 'city', 'state', 'pincode'],
   ['password', 'confirm_password', 'accept_terms'],
 ]
 const DRAFT_KEY = 'mythree-register-draft'
 const EMPTY = {
-  full_name: '', email: '', date_of_birth: '', exam_preference: '', phone: '', guardian_name: '', guardian_phone: '',
+  full_name: '', name_english: '', email: '', date_of_birth: '', exam_preference: '', phone: '', guardian_name: '', guardian_phone: '',
   address_line1: '', address_line2: '', city: '', state: 'Karnataka', pincode: '',
   password: '', confirm_password: '', accept_terms: false as boolean,
 }
@@ -59,7 +59,8 @@ export default function RegisterPage() {
   const age = ageFromDob(String(form.date_of_birth))
   const isMinor = age !== null && age < 18
   const today = new Date().toISOString().slice(0, 10)
-  const uidPreview = memberUidBase(String(form.full_name), normalizeIndianMobile(String(isMinor ? form.guardian_phone : form.phone)) ?? '')
+  const showEnglish = needsEnglishName(String(form.full_name))
+  const uidPreview = memberUidBase(showEnglish ? String(form.name_english) : String(form.full_name), normalizeIndianMobile(String(isMinor ? form.guardian_phone : form.phone)) ?? '')
 
   function validateStep(s: number) {
     const parsed = registerSchema.safeParse(form)
@@ -98,6 +99,7 @@ export default function RegisterPage() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           full_name: d.full_name,
+          name_english: needsEnglishName(d.full_name) ? d.name_english || '' : '',
           date_of_birth: d.date_of_birth,
           exam_preference: d.exam_preference,
           phone: d.phone || '',
@@ -165,6 +167,9 @@ export default function RegisterPage() {
             {step === 0 && (
               <>
                 <Input label="Full name" autoComplete="name" value={String(form.full_name)} onChange={set('full_name')} error={errors.full_name} required />
+                {showEnglish && (
+                  <Input label="Name in English letters" autoComplete="off" lang="en" value={String(form.name_english)} onChange={set('name_english')} error={errors.name_english} hint="Used for your member ID – e.g. Subramanya" required />
+                )}
                 <Input label="Email" type="email" inputMode="email" autoComplete="email" value={String(form.email)} onChange={set('email')} error={errors.email} required />
                 <Input label="Date of birth" type="date" max={today} min="1900-01-01" autoComplete="bday" value={String(form.date_of_birth)} onChange={set('date_of_birth')} error={errors.date_of_birth} hint={age !== null ? `Age ${age}${isMinor ? ' – a parent or guardian contact will be needed' : ''}` : undefined} required />
                 <fieldset>

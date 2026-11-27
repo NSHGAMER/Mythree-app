@@ -267,6 +267,10 @@ describe('online examination', () => {
     expect(pub.error).toBeNull()
     const shown = await examMember.c.rpc('my_exam')
     expect(shown.data.results[0]).toMatchObject({ result: 'pass', marks: 72 })
+    // regression (bug 4): publishing moves readiness to exam_completed – START must still return the existing session
+    const resume = await examMember.c.rpc('start_exam')
+    expect(resume.error).toBeNull()
+    expect(resume.data).toMatchObject({ id: sessionId, already_started: true, status: 'submitted' })
     const over = await admin.c.rpc('admin_save_result', { p_user: examMember.id, p_schedule: scheduleId, p_mode: 'online', p_exam_date: null, p_marks: 10, p_max: 100, p_remarks: null, p_result: 'fail', p_publish: false, p_overwrite_published: false, p_source: 'manual' })
     expect(over.error?.message).toMatch(/RESULT_ALREADY_PUBLISHED/)
   })

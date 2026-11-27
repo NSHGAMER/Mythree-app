@@ -3,9 +3,10 @@
 -- Expected (27 Nov 2026 run): SUBR3210, ALXX0007, XXXX3210, ABRA1234; GUARDIAN_PHONE_REQUIRED; PHONE_REQUIRED;
 -- pending_gate = REGISTRATION_PENDING; AMOUNT_MISMATCH; first payment → ANAN5678 + MYR-YYYY-000001; replay already=true;
 -- second order → duplicate=true, failed, DUPLICATE_PAYMENT_REFUND_REQUIRED; sibling ANAN5678-2; parent PARE5678;
--- late failure event leaves the paid row paid; ORDER_NOT_FOUND; one-paid unique index rejects a second paid row.
+-- late failure event leaves the paid row paid; ORDER_NOT_FOUND; one-paid unique index rejects a second paid row;
+-- (0009) ENGLISH_NAME_REQUIRED, ENGLISH_NAME_INVALID, Kannada name + "Subramanya" → SUBR3210.
 do $t$
-declare r jsonb := '{}'; u1 uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); u3 uuid := gen_random_uuid();
+declare r jsonb := '{}'; u1 uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); u3 uuid := gen_random_uuid(); u4 uuid := gen_random_uuid();
   x jsonb; ch uuid; kid_dob text := to_char(now() - interval '12 years', 'YYYY-MM-DD');
 begin
   r := r || jsonb_build_object('uid_base_normal', public.member_uid_base('Subramanya H', '+919876543210'),
@@ -64,5 +65,23 @@ begin
   begin perform public.mark_registration_paid('order_nope','p',15100,'upi'); exception when others then r := r || jsonb_build_object('unknown_order', sqlerrm); end;
   begin insert into public.registration_payments (user_id, amount_paise, idempotency_key, status) values (u1, 15100, gen_random_uuid(), 'paid'); r := r || '{"second_paid_row":"ACCEPTED (bug)"}';
   exception when others then r := r || jsonb_build_object('second_paid_row', left(sqlerrm, 80)); end;
+  -- 0009: names in another script need an English spelling, which then drives the UID
+  begin
+    insert into auth.users (instance_id,id,aud,role,email,encrypted_password,raw_user_meta_data,created_at,updated_at)
+    values ('00000000-0000-0000-0000-000000000000', gen_random_uuid(),'authenticated','authenticated','t-deva-bad@mythree.test','x',
+      jsonb_build_object('full_name','सुब्रह्मण्य','date_of_birth','1990-01-01','phone','+919876543210'),now(),now());
+    r := r || '{"native_without_english":"ACCEPTED (bug)"}';
+  exception when others then r := r || jsonb_build_object('native_without_english', sqlerrm); end;
+  begin
+    insert into auth.users (instance_id,id,aud,role,email,encrypted_password,raw_user_meta_data,created_at,updated_at)
+    values ('00000000-0000-0000-0000-000000000000', gen_random_uuid(),'authenticated','authenticated','t-deva-bad2@mythree.test','x',
+      jsonb_build_object('full_name','सुब्रह्मण्य','name_english','सुब्र','date_of_birth','1990-01-01','phone','+919876543210'),now(),now());
+    r := r || '{"english_in_native_script":"ACCEPTED (bug)"}';
+  exception when others then r := r || jsonb_build_object('english_in_native_script', sqlerrm); end;
+  insert into auth.users (instance_id,id,aud,role,email,encrypted_password,raw_user_meta_data,created_at,updated_at) values
+   ('00000000-0000-0000-0000-000000000000', u4,'authenticated','authenticated','t-deva@mythree.test','x',
+     jsonb_build_object('full_name','ಸುಬ್ರಹ್ಮಣ್ಯ','name_english','Subramanya','date_of_birth','1990-01-01','phone','+919876543210'),now(),now());
+  r := r || jsonb_build_object('uid_from_english_spelling', public.confirm_registration(u4),
+     'stored_names', (select jsonb_build_object('full_name', full_name, 'name_english', name_english) from public.profiles where id = u4));
   raise exception 'RESULTS %', r;
 end $t$;

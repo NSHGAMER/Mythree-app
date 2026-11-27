@@ -37,6 +37,8 @@ const MESSAGES: Record<string, string> = {
   EVALUATE_BEFORE_PURGE: 'Save the evaluation before removing the answer sheets.',
   VIDEO_NOT_AVAILABLE: 'This lesson is not available yet.',
   REGISTRATION_PENDING: 'Please complete your ₹151 registration payment to unlock learning.',
+  ENGLISH_NAME_REQUIRED: 'Please also enter your name in English letters – it is used for your member ID.',
+  ENGLISH_NAME_INVALID: 'Write the English name with letters A–Z only.',
   GUARDIAN_PHONE_REQUIRED: 'Members under 18 must give a parent or guardian mobile number.',
   PHONE_REQUIRED: 'Please enter your mobile number.',
   PAYMENT_PENDING: 'Your payment is still being processed by the bank. Please check the status again in a minute.',
