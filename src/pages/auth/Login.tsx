@@ -2,6 +2,7 @@ import { Eye, EyeOff, LogIn, MailCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/Brand'
+import { captchaEnabled, Turnstile } from '../../components/Turnstile'
 import { Alert, Button, Card, Input } from '../../components/ui'
 import { useDocumentTitle } from '../../hooks/useAsync'
 import { friendlyError } from '../../lib/errors'
@@ -48,6 +49,8 @@ export default function LoginPage() {
   const [unconfirmed, setUnconfirmed] = useState(false)
   const [resent, setResent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [captcha, setCaptcha] = useState<string | null>(null)
+  const [captchaRun, setCaptchaRun] = useState(0)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -56,9 +59,12 @@ export default function LoginPage() {
     setErrors({})
     setErr('')
     setUnconfirmed(false)
+    if (captchaEnabled && !captcha) return setErr('Please complete the security check.')
     setBusy(true)
-    const { data, error } = await supabase.auth.signInWithPassword(parsed.data)
+    const { data, error } = await supabase.auth.signInWithPassword({ ...parsed.data, options: captcha ? { captchaToken: captcha } : undefined })
     setBusy(false)
+    // a Turnstile token is single-use
+    if (captchaEnabled) { setCaptcha(null); setCaptchaRun((n) => n + 1) }
     if (error) {
       if (/Email not confirmed/i.test(error.message)) setUnconfirmed(true)
       setErr(friendlyError(error))
@@ -70,8 +76,9 @@ export default function LoginPage() {
 
   async function resend() {
     setBusy(true)
-    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim().toLowerCase(), options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim().toLowerCase(), options: { emailRedirectTo: `${window.location.origin}/auth/callback`, captchaToken: captcha ?? undefined } })
     setBusy(false)
+    if (captchaEnabled) { setCaptcha(null); setCaptchaRun((n) => n + 1) }
     if (error) setErr(friendlyError(error))
     else setResent(true)
   }
@@ -96,6 +103,7 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </div>
+        <Turnstile onToken={setCaptcha} resetKey={captchaRun} action="login" />
         <Button type="submit" size="lg" loading={busy} className="w-full" icon={<LogIn className="size-5" />}>
           Login
         </Button>

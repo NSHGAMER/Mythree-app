@@ -51,45 +51,62 @@ After this burst the free instance stayed throttled for several minutes (a follo
 - Not load-tested: real email/SMS delivery (would send thousands of messages and needs paid providers) and Razorpay (needs keys). Registration bursts were tested only through the rate-limited pre-check and the database trigger, not by creating thousands of real Auth users.
 
 ---
+# Phase 6 – staging results (27–28 Nov 2026, branch `feature/professor-requirements`)
 
-# Phase 6 – staging results (27 Nov 2026, branch `feature/professor-requirements`)
+## Methodology
+| Item | Value |
+|---|---|
+| Target | free Supabase project `mythree-staging` (ap-south-1, **Free plan, Nano compute** – the same plan as production), migrations 0001–0009 |
+| What is called | the real PostgREST RPCs the app calls (`my_dashboard`, `leaderboard`, `my_videos`, `my_exam`, `my_registration`, `record_video_progress` = a write) |
+| Client | one Windows PC in India, Node 24 `fetch`, script `loadtest/run.mjs` |
+| Registered accounts | 306 on staging (300 confirmed test members `loadtest+N@mythree.test`, 5 pending, 1 admin) |
+| Signed-in sessions used | **28** (Supabase Auth allows ~30 sign-ins per 5 min per IP). Virtual users share these 28 tokens, so the server sees the same work as distinct members except that writes hit only 28 progress rows (harder than reality) |
+| Not exercised | Auth sign-in bursts, Razorpay, e-mail/SMS, Storage uploads (would consume the 1 GB free quota) |
+| Raw results | `docs/verification/loadtest-raw/*.json` (one file per run, every request's status counted, p50/p95/p99/max) |
 
-**Target:** free Supabase project `mythree-staging` (ap-south-1, Free plan / Nano) with migrations 0001–0008 applied – the same plan as production.
-**Client:** one Windows machine in India. **Sessions:** 28 test members (the Auth limit of ~30 sign-ins per 5 minutes per IP), shared by the virtual users.
-No real e-mails, SMS or payments were sent. Every number below was measured.
+Two different measurements – **they are not the same thing**:
+- **"N members active within one minute"**: N virtual members arrive at random moments over 60 s; each opens the dashboard, video classes,
+  sends a video heartbeat (write), opens the leaderboard and the exam page, with 1–4 s between clicks (5 calls each). The script records
+  how many requests were really *in flight at the same moment* ("peak in flight").
+- **"N simultaneous requests"**: N copies of one call fired at exactly the same instant (a worst-case burst).
 
-Two different things are measured:
-- **Simultaneous requests** – N requests fired at exactly the same moment (worst case, rare in practice).
-- **Users active in the same minute** – N members each opening the dashboard, video classes, a video heartbeat (write), the leaderboard and the exam page, with 1–4 s between clicks, arrivals spread over 60 s.
+## 1. Members active within one minute (realistic use)
+| Run (UTC) | Members in 60 s | Calls | OK | 429 | 500 | 502 | 503 | 504 | Other | p50 | p95 | p99 | Peak in flight |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 28 Nov 01:01 | 200 | 1,000 | 1,000 | 0 | 0 | 0 | 0 | 0 | 0 | 66 ms | 87 ms | 150 ms | 7 |
+| 28 Nov 01:03 | 500 | 2,500 | 2,500 | 0 | 0 | 0 | 0 | 0 | 0 | 50 ms | 69 ms | 104 ms | 11 |
+| 28 Nov 01:04 | **1,000** | **5,000** | **5,000** | 0 | 0 | 0 | 0 | 0 | 0 | **50 ms** | **73 ms** | 90 ms | **17** |
+| 27 Nov 15:21 | 1,000 (reads only) | 4,000 | 4,000 | 0 | 0 | 0 | 0 | 0 | 0 | 76 ms | 111 ms | 171 ms | 25 |
+| 27 Nov 15:23 | 1,000 | 5,000 | 5,000 | 0 | 0 | 0 | 0 | 0 | 0 | 77 ms | 107 ms | 122 ms | 18 |
+| 27 Nov 14:58 | 1,000 – started straight after a 1,000-simultaneous burst | 5,000 | 2,271 | 0 | 1 | 0 | 0 | 2,728 | 0 | 143 s | 204 s | 215 s | 1,000 |
+| 27 Nov 15:26 | 2,000 | 10,000 | 2,844 | 0 | 0 | 0 | 0 | 3,066 | 2,217 × 522, 1,873 client errors | 131 s | 302 s | 302 s | 1,817 |
 
-## 1. Simultaneous requests (each row = one burst)
+**The 1,000-member test, exactly:** 1,000 *virtual* members (not 1,000 different logins – 28 real sessions shared, see methodology),
+backed by 306 registered staging accounts; arrivals spread over 60 s; 5 calls each (dashboard, video classes, video heartbeat write,
+leaderboard, exam page) = 5,000 requests in ~73 s; at most **17–25 requests were in flight at the same moment**; result 5,000 × HTTP 200,
+**zero 429/500/502/503/504**, p50 50–77 ms, p95 73–107 ms. Run on Supabase **Free** staging.
+
+## 2. Simultaneous requests (worst-case bursts)
+28 Nov 01:08 UTC (p95, all calls in each burst fired at once):
 | Call | 50 | 100 | 200 | 500 | 1,000 |
 |---|---|---|---|---|---|
-| `my_dashboard` p95 | 0.74 s | 0.57 s | 1.26 s | 2.27 s | 31.7 s |
-| `leaderboard` (snapshot) p95 | 0.21 s | 0.29 s | 0.51 s | 1.76 s | 50.1 s |
-| `my_videos` p95 | 0.22 s | 0.23 s | 0.52 s | 0.89 s | 41.0 s |
-| `my_exam` p95 | 0.18 s | 0.27 s | 0.42 s | 1.01 s | 57.9 s |
-| `my_registration` p95 | 0.14 s | 0.19 s | 0.29 s | 0.73 s | 30.1 s |
-| `record_video_progress` (write) p95 | 0.27 s | 0.23 s | 0.32 s | 1.27 s | 24.3 s |
-| Errors | 0 | 0 | 0 | 0 | 0 |
+| `my_dashboard` | 2.48 s | 2.09 s | 0.98 s | 4.22 s | 51.6 s |
+| `leaderboard` | 1.34 s | 2.31 s | 2.22 s | 5.97 s | 54.0 s |
+| `my_videos` | 0.16 s | 0.31 s | 1.12 s | 2.52 s | 38.7 s |
+| `my_exam` | 0.17 s | 0.37 s | 0.82 s | 1.91 s | 28.0 s (91 × 504) |
+| `my_registration` | 0.16 s | 0.17 s | 0.63 s | 0.82 s | 50.6 s |
+| `record_video_progress` (write) | 0.16 s | 0.20 s | 1.38 s | 1.75 s | 32.1 s (1 client error) |
+| Errors | 0 | 0 | 0 | 0 | 92 of 6,000 |
 
-Compared with v1 (26 Nov): `my_dashboard` at 500 simultaneous requests went from p95 **16.1 s → 2.3 s**. At 1,000 simultaneous requests every call still succeeded but took 24–58 s; the free instance is CPU-bound at that point.
+27 Nov 14:53 UTC (same script): 0 errors at every level up to 1,000; p95 at 500 = 0.7–2.3 s; at 1,000 = 24–58 s.
+The 28 Nov burst at 50–100 was slower than on 27 Nov (first burst on a cold instance); both runs are reported.
 
-## 2. Members active in the same minute
-| Members in 60 s | Calls | OK | p50 | p95 | p99 | Notes |
-|---|---|---|---|---|---|---|
-| 200 | 1,000 | 1,000 | 0.07 s | 0.25 s | 1.5 s | incl. video writes |
-| 300 | 1,200 | 1,200 | 0.08 s | 0.15 s | 0.76 s | reads only |
-| 500 | 2,500 | 2,500 | 0.08 s | 0.11 s | 0.16 s | incl. video writes |
-| 750 | 3,000 | 3,000 | 0.07 s | 0.10 s | 0.13 s | reads only |
-| **1,000** | **5,000** | **5,000** | **0.08 s** | **0.11 s** | **0.12 s** | incl. video writes |
-| 2,000 | 10,000 | 2,844 | 131 s | 302 s | 302 s | **collapsed**: 3,066 × 504, 2,217 × 522, 1,873 client connection errors |
-
-- A first 500/1,000-member run started right after the 1,000-simultaneous-request bursts and was much worse (500: p95 40 s, 2 timeouts; 1,000: 2,728 × 504). Repeated after a short pause, the same load ran cleanly (table above). **After an extreme burst the free instance needs a few minutes to recover.**
-- The 2,000-member run reached ~1,800 requests in flight from one client machine; part of the failures (status 0) are client-side socket limits, but the 504/522 responses show the server was saturated too.
-
-## 3. Conclusions (Free plan)
-- **Proven:** 1,000 members active within the same minute, each doing five typical actions including a write: **0 errors, p95 0.11 s**. Up to 500 simultaneous requests: 0 errors, p95 ≤ 2.3 s.
-- **Not proven / not supported on Free:** 2,000 members within one minute, or 1,000 simultaneous requests at good speed. We do **not** claim 2,000 simultaneous users.
-- For 2,000 registered members this is comfortable in normal use (they rarely act in the same minute). Risky moments are coordinated events – e.g. *everyone* opening the online exam at 10:00 sharp. Mitigations already built: exam START is one small write per member, uploads go straight to Storage, and entry stays open for a window (admin can set `entry_closes_at` generously). For a large single-moment exam, stagger cohorts or temporarily upgrade compute for that day.
-- Not load-tested: Razorpay checkout (no keys), real e-mail/SMS delivery, Storage upload throughput at scale (would consume the 1 GB free storage).
+## 3. Conclusions (Supabase Free / Vercel Hobby)
+- **Proven:** 1,000 members active within the same minute doing typical actions (including a write): 0 errors, p95 ≈ 0.1 s, repeated on two days.
+- **Proven:** up to 500 *simultaneous* requests: 0 errors, p95 ≤ 6 s (usually ≤ 2.5 s).
+- **Not supported on Free:** 1,000 *simultaneous* requests at good speed (24–58 s, and on 28 Nov 1.5 % timed out), and **2,000 members within one minute**
+  (collapsed: 72 % of requests failed). We do **not** claim 2,000 simultaneous users.
+- After an extreme burst the free instance needs a few minutes to recover (see the 27 Nov 14:58 row).
+- Practical meaning for 2,000 registered members: normal day-to-day use is comfortable. Risky are *coordinated* moments, e.g. everyone
+  pressing START for the online exam in the same second. Mitigations: keep the entry window long (`entry_closes_at`), stagger batches,
+  or temporarily upgrade compute on exam day.

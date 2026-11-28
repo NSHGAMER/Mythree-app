@@ -4,7 +4,7 @@ Status legend: ✅ implemented **and** tested on staging · 🟡 implemented, te
 Source: owner directives of 26 Nov 2026 (build) and 27 Nov 2026 (professor requirements + free-tier hardening). The professor's original PDF has not been provided; requirements below come from the owner's directive.
 Nothing here is in production yet: all changes are on branch `feature/professor-requirements` and the free `mythree-staging` Supabase project.
 
-_Last updated: 27 Nov 2026 – Phase 6 (staging tests)_
+_Last updated: 28 Nov 2026 – see also docs/REQUIREMENTS_CHECKLIST.md (completed / partial / not completed with evidence) and IMPLEMENTATION_REPORT.md_
 
 Test references: **DB** = `tests/db/*.test.ts` (46 client-side tests on staging) · **SQL** = `tests/db/registration_suite.sql`, `tests/db/exam_deadline_suite.sql` · **E2E** = `tests/e2e/flows.spec.ts` + `tests/e2e/phases.spec.ts` (desktop + mobile, staging) · **Unit** = `src/**/*.test.ts(x)` (99).
 

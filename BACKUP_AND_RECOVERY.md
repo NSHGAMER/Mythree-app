@@ -30,7 +30,7 @@ gpg --decrypt --output mythree.dump mythree-<STAMP>.dump.gpg     # asks for BACK
 sha256sum mythree-<STAMP>.dump.gpg   # compare with mythree-<STAMP>.sha256
 ```
 ### 3.2 Restore into an isolated project first (never straight over production)
-1. Create a **new** free Supabase project (e.g. `mythree-restore-test`) – or use the staging project.
+1. Use the staging project `mythree-staging` (a free organisation allows only 2 active projects, so a third restore project would require pausing staging first).
 2. Apply the repository migrations if you only need structure: `supabase db push` – or restore everything from the dump:
 ```bash
 pg_restore --dbname "<restore-project session URI>" --no-owner --no-privileges --clean --if-exists \
@@ -38,7 +38,7 @@ pg_restore --dbname "<restore-project session URI>" --no-owner --no-privileges -
 # auth accounts (only when rebuilding production after a disaster):
 pg_restore --dbname "<target URI>" --no-owner --no-privileges --data-only --schema=auth mythree.dump
 ```
-3. Check counts: `select count(*) from profiles; select count(*) from registration_payments; select count(*) from exam_submissions;`
+3. Check counts: `select count(*) from profiles; select count(*) from registration_payments; select count(*) from exam_submission_pages;`
 4. Point a Vercel **preview** deployment at the restored project (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) and sign in with a test account.
 5. Only after verification, and with the owner's approval, switch production env vars or restore into production.
 
@@ -67,3 +67,10 @@ Prevention: regular member traffic; the scheduled backup job also connects night
 | Lost admin access | Another admin promotes you (Admin → Member → Make admin) or run `update profiles set role='admin' where email='…'` in the SQL editor. |
 | Leaked key | Rotate in Supabase (API keys) / Razorpay dashboard, update Vercel/Supabase secrets, redeploy. |
 | Storage full (1 GB free) | Download evaluated exam ZIPs, then use the admin purge tool for evaluated exams. |
+
+## 7. Drill log
+| Date | What | Result | Evidence |
+|---|---|---|---|
+| 28 Nov 2026 | Logical backup of all 33 tables (`public` + `auth.users`, 2,168 rows) and restore into the isolated schema `drill_restore` on staging (`scripts/backup_restore_drill.sql`) | **33/33 tables: row counts and checksums identical**, 0.67 s; drill schemas dropped afterwards | `docs/verification/backup-restore-drill.md` |
+| 27–28 Nov 2026 | Schema rollback to v1 and re-upgrade 0005 → 0009 on staging (the production upgrade path) | v1 tests 17/17 after rollback with all v1 data kept; 46/46 after re-upgrade | `docs/verification/rehearsal-1-after-rollback-v1-tests.log`, `docs/verification/db-tests.log` |
+| pending | Nightly `pg_dump` workflow + `pg_restore` drill (§4) | needs the owner's `SUPABASE_DB_URL` and `BACKUP_PASSPHRASE` GitHub secrets | — |

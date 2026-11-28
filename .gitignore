@@ -38,3 +38,6 @@ npm-debug.log*
 Thumbs.db
 *.suo
 *.sw?
+
+# test evidence is committed on purpose (contains no secrets)
+!docs/verification/*.log

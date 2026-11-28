@@ -9,6 +9,7 @@ import { friendlyError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
 import { ageFromDob, fieldErrors, INDIAN_STATES, memberUidBase, needsEnglishName, normalizeIndianMobile, passwordStrength, registerSchema, type RegisterInput } from '../../lib/validation'
 import { AuthCard, PasswordInput } from './Login'
+import { captchaEnabled, Turnstile } from '../../components/Turnstile'
 
 const STEPS = ['About you', 'Contact & address', 'Security']
 const STEP_FIELDS: (keyof RegisterInput)[][] = [
@@ -43,6 +44,8 @@ export default function RegisterPage() {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<string | null>(null)
+  const [captcha, setCaptcha] = useState<string | null>(null)
+  const [captchaRun, setCaptchaRun] = useState(0)
 
   useEffect(() => {
     try {
@@ -90,6 +93,7 @@ export default function RegisterPage() {
     }
     const d = parsed.data
     const minor = (ageFromDob(d.date_of_birth) ?? 99) < 18
+    if (captchaEnabled && !captcha) return setErr('Please complete the security check.')
     setBusy(true)
     setErr('')
     const { data, error } = await supabase.auth.signUp({
@@ -97,6 +101,7 @@ export default function RegisterPage() {
       password: d.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        captchaToken: captcha ?? undefined,
         data: {
           full_name: d.full_name,
           name_english: needsEnglishName(d.full_name) ? d.name_english || '' : '',
@@ -115,6 +120,7 @@ export default function RegisterPage() {
       },
     })
     setBusy(false)
+    if (captchaEnabled) { setCaptcha(null); setCaptchaRun((n) => n + 1) }
     if (error) return setErr(friendlyError(error))
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       return setErr('An account with this email already exists. Please sign in (or use “Resend verification email”) to continue your registration.')
@@ -246,6 +252,7 @@ export default function RegisterPage() {
             )}
           </motion.div>
         </AnimatePresence>
+        {step === STEPS.length - 1 && <div className="mt-5"><Turnstile onToken={setCaptcha} resetKey={captchaRun} action="signup" /></div>}
         <div className="mt-7 flex gap-3">
           {step > 0 && (
             <Button variant="outline" onClick={() => setStep((s) => s - 1)} icon={<ArrowLeft className="size-4" />}>

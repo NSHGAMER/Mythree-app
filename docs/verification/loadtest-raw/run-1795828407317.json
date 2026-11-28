@@ -1,0 +1,463 @@
+{
+  "started": "2026-11-28T01:08:04.609Z",
+  "target": "https://mxxkpc…",
+  "accounts": 28,
+  "vus": 0,
+  "results": [
+    {
+      "scenario": "my_dashboard @50 concurrent",
+      "requests": 50,
+      "ok": 50,
+      "errors": 0,
+      "status": {
+        "200": 50
+      },
+      "p50_ms": 2152,
+      "p95_ms": 2483,
+      "p99_ms": 2499,
+      "max_ms": 2499,
+      "wall_ms": 2504,
+      "rps": 20
+    },
+    {
+      "scenario": "leaderboard(snapshot) @50 concurrent",
+      "requests": 50,
+      "ok": 50,
+      "errors": 0,
+      "status": {
+        "200": 50
+      },
+      "p50_ms": 1030,
+      "p95_ms": 1343,
+      "p99_ms": 1370,
+      "max_ms": 1370,
+      "wall_ms": 1374,
+      "rps": 36
+    },
+    {
+      "scenario": "my_videos @50 concurrent",
+      "requests": 50,
+      "ok": 50,
+      "errors": 0,
+      "status": {
+        "200": 50
+      },
+      "p50_ms": 143,
+      "p95_ms": 164,
+      "p99_ms": 182,
+      "max_ms": 182,
+      "wall_ms": 187,
+      "rps": 268
+    },
+    {
+      "scenario": "my_exam @50 concurrent",
+      "requests": 50,
+      "ok": 50,
+      "errors": 0,
+      "status": {
+        "200": 50
+      },
+      "p50_ms": 133,
+      "p95_ms": 171,
+      "p99_ms": 172,
+      "max_ms": 172,
+      "wall_ms": 179,
+      "rps": 279
+    },
+    {
+      "scenario": "my_registration @50 concurrent",
+      "requests": 50,
+      "ok": 50,
+      "errors": 0,
+      "status": {
+        "200": 50
+      },
+      "p50_ms": 141,
+      "p95_ms": 160,
+      "p99_ms": 162,
+      "max_ms": 162,
+      "wall_ms": 165,
+      "rps": 304
+    },
+    {
+      "scenario": "record_video_progress @50 concurrent (writes)",
+      "requests": 50,
+      "ok": 50,
+      "errors": 0,
+      "status": {
+        "200": 50
+      },
+      "p50_ms": 132,
+      "p95_ms": 162,
+      "p99_ms": 179,
+      "max_ms": 179,
+      "wall_ms": 184,
+      "rps": 272
+    },
+    {
+      "scenario": "my_dashboard @100 concurrent",
+      "requests": 100,
+      "ok": 100,
+      "errors": 0,
+      "status": {
+        "200": 100
+      },
+      "p50_ms": 1650,
+      "p95_ms": 2092,
+      "p99_ms": 2104,
+      "max_ms": 2104,
+      "wall_ms": 2111,
+      "rps": 47
+    },
+    {
+      "scenario": "leaderboard(snapshot) @100 concurrent",
+      "requests": 100,
+      "ok": 100,
+      "errors": 0,
+      "status": {
+        "200": 100
+      },
+      "p50_ms": 963,
+      "p95_ms": 2310,
+      "p99_ms": 2311,
+      "max_ms": 2311,
+      "wall_ms": 2320,
+      "rps": 43
+    },
+    {
+      "scenario": "my_videos @100 concurrent",
+      "requests": 100,
+      "ok": 100,
+      "errors": 0,
+      "status": {
+        "200": 100
+      },
+      "p50_ms": 185,
+      "p95_ms": 306,
+      "p99_ms": 313,
+      "max_ms": 313,
+      "wall_ms": 318,
+      "rps": 314
+    },
+    {
+      "scenario": "my_exam @100 concurrent",
+      "requests": 100,
+      "ok": 100,
+      "errors": 0,
+      "status": {
+        "200": 100
+      },
+      "p50_ms": 351,
+      "p95_ms": 366,
+      "p99_ms": 368,
+      "max_ms": 368,
+      "wall_ms": 374,
+      "rps": 268
+    },
+    {
+      "scenario": "my_registration @100 concurrent",
+      "requests": 100,
+      "ok": 100,
+      "errors": 0,
+      "status": {
+        "200": 100
+      },
+      "p50_ms": 131,
+      "p95_ms": 169,
+      "p99_ms": 174,
+      "max_ms": 174,
+      "wall_ms": 177,
+      "rps": 566
+    },
+    {
+      "scenario": "record_video_progress @100 concurrent (writes)",
+      "requests": 100,
+      "ok": 100,
+      "errors": 0,
+      "status": {
+        "200": 100
+      },
+      "p50_ms": 160,
+      "p95_ms": 199,
+      "p99_ms": 207,
+      "max_ms": 207,
+      "wall_ms": 211,
+      "rps": 473
+    },
+    {
+      "scenario": "my_dashboard @200 concurrent",
+      "requests": 200,
+      "ok": 200,
+      "errors": 0,
+      "status": {
+        "200": 200
+      },
+      "p50_ms": 885,
+      "p95_ms": 984,
+      "p99_ms": 1002,
+      "max_ms": 1005,
+      "wall_ms": 1011,
+      "rps": 198
+    },
+    {
+      "scenario": "leaderboard(snapshot) @200 concurrent",
+      "requests": 200,
+      "ok": 200,
+      "errors": 0,
+      "status": {
+        "200": 200
+      },
+      "p50_ms": 1610,
+      "p95_ms": 2222,
+      "p99_ms": 2231,
+      "max_ms": 2231,
+      "wall_ms": 2239,
+      "rps": 89
+    },
+    {
+      "scenario": "my_videos @200 concurrent",
+      "requests": 200,
+      "ok": 200,
+      "errors": 0,
+      "status": {
+        "200": 200
+      },
+      "p50_ms": 1023,
+      "p95_ms": 1118,
+      "p99_ms": 1126,
+      "max_ms": 1126,
+      "wall_ms": 1139,
+      "rps": 176
+    },
+    {
+      "scenario": "my_exam @200 concurrent",
+      "requests": 200,
+      "ok": 200,
+      "errors": 0,
+      "status": {
+        "200": 200
+      },
+      "p50_ms": 684,
+      "p95_ms": 819,
+      "p99_ms": 831,
+      "max_ms": 832,
+      "wall_ms": 836,
+      "rps": 239
+    },
+    {
+      "scenario": "my_registration @200 concurrent",
+      "requests": 200,
+      "ok": 200,
+      "errors": 0,
+      "status": {
+        "200": 200
+      },
+      "p50_ms": 523,
+      "p95_ms": 627,
+      "p99_ms": 637,
+      "max_ms": 639,
+      "wall_ms": 647,
+      "rps": 309
+    },
+    {
+      "scenario": "record_video_progress @200 concurrent (writes)",
+      "requests": 200,
+      "ok": 200,
+      "errors": 0,
+      "status": {
+        "200": 200
+      },
+      "p50_ms": 1269,
+      "p95_ms": 1376,
+      "p99_ms": 1386,
+      "max_ms": 1387,
+      "wall_ms": 1421,
+      "rps": 141
+    },
+    {
+      "scenario": "my_dashboard @500 concurrent",
+      "requests": 500,
+      "ok": 500,
+      "errors": 0,
+      "status": {
+        "200": 500
+      },
+      "p50_ms": 3395,
+      "p95_ms": 4224,
+      "p99_ms": 4242,
+      "max_ms": 4252,
+      "wall_ms": 4275,
+      "rps": 117
+    },
+    {
+      "scenario": "leaderboard(snapshot) @500 concurrent",
+      "requests": 500,
+      "ok": 500,
+      "errors": 0,
+      "status": {
+        "200": 500
+      },
+      "p50_ms": 4866,
+      "p95_ms": 5969,
+      "p99_ms": 5979,
+      "max_ms": 5986,
+      "wall_ms": 5998,
+      "rps": 83
+    },
+    {
+      "scenario": "my_videos @500 concurrent",
+      "requests": 500,
+      "ok": 500,
+      "errors": 0,
+      "status": {
+        "200": 500
+      },
+      "p50_ms": 2120,
+      "p95_ms": 2515,
+      "p99_ms": 2523,
+      "max_ms": 2530,
+      "wall_ms": 2534,
+      "rps": 197
+    },
+    {
+      "scenario": "my_exam @500 concurrent",
+      "requests": 500,
+      "ok": 500,
+      "errors": 0,
+      "status": {
+        "200": 500
+      },
+      "p50_ms": 1596,
+      "p95_ms": 1914,
+      "p99_ms": 1940,
+      "max_ms": 1948,
+      "wall_ms": 1961,
+      "rps": 255
+    },
+    {
+      "scenario": "my_registration @500 concurrent",
+      "requests": 500,
+      "ok": 500,
+      "errors": 0,
+      "status": {
+        "200": 500
+      },
+      "p50_ms": 562,
+      "p95_ms": 819,
+      "p99_ms": 832,
+      "max_ms": 841,
+      "wall_ms": 851,
+      "rps": 588
+    },
+    {
+      "scenario": "record_video_progress @500 concurrent (writes)",
+      "requests": 500,
+      "ok": 500,
+      "errors": 0,
+      "status": {
+        "200": 500
+      },
+      "p50_ms": 1408,
+      "p95_ms": 1751,
+      "p99_ms": 1775,
+      "max_ms": 1781,
+      "wall_ms": 1789,
+      "rps": 279
+    },
+    {
+      "scenario": "my_dashboard @1000 concurrent",
+      "requests": 1000,
+      "ok": 1000,
+      "errors": 0,
+      "status": {
+        "200": 1000
+      },
+      "p50_ms": 50736,
+      "p95_ms": 51649,
+      "p99_ms": 51731,
+      "max_ms": 52330,
+      "wall_ms": 52349,
+      "rps": 19
+    },
+    {
+      "scenario": "leaderboard(snapshot) @1000 concurrent",
+      "requests": 1000,
+      "ok": 1000,
+      "errors": 0,
+      "status": {
+        "200": 1000
+      },
+      "p50_ms": 52785,
+      "p95_ms": 53988,
+      "p99_ms": 54487,
+      "max_ms": 55039,
+      "wall_ms": 55063,
+      "rps": 18
+    },
+    {
+      "scenario": "my_videos @1000 concurrent",
+      "requests": 1000,
+      "ok": 1000,
+      "errors": 0,
+      "status": {
+        "200": 1000
+      },
+      "p50_ms": 36163,
+      "p95_ms": 38654,
+      "p99_ms": 39006,
+      "max_ms": 39059,
+      "wall_ms": 39077,
+      "rps": 26
+    },
+    {
+      "scenario": "my_exam @1000 concurrent",
+      "requests": 1000,
+      "ok": 909,
+      "errors": 91,
+      "status": {
+        "200": 909,
+        "504": 91
+      },
+      "p50_ms": 24169,
+      "p95_ms": 28010,
+      "p99_ms": 28046,
+      "max_ms": 28057,
+      "wall_ms": 28072,
+      "rps": 36,
+      "sample_error": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}"
+    },
+    {
+      "scenario": "my_registration @1000 concurrent",
+      "requests": 1000,
+      "ok": 1000,
+      "errors": 0,
+      "status": {
+        "200": 1000
+      },
+      "p50_ms": 33770,
+      "p95_ms": 50623,
+      "p99_ms": 50715,
+      "max_ms": 50768,
+      "wall_ms": 50774,
+      "rps": 20
+    },
+    {
+      "scenario": "record_video_progress @1000 concurrent (writes)",
+      "requests": 1000,
+      "ok": 999,
+      "errors": 1,
+      "status": {
+        "0": 1,
+        "200": 999
+      },
+      "p50_ms": 24967,
+      "p95_ms": 32095,
+      "p99_ms": 32136,
+      "max_ms": 32553,
+      "wall_ms": 32621,
+      "rps": 31,
+      "sample_error": "TypeError: fetch failed"
+    }
+  ],
+  "finished": "2026-11-28T01:13:27.315Z"
+}

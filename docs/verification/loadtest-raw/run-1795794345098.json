@@ -1,0 +1,61 @@
+{
+  "started": "2026-11-27T15:26:53.070Z",
+  "target": "https://mxxkpc…",
+  "accounts": 28,
+  "vus": 0,
+  "results": [
+    {
+      "scenario": "2000 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 10000,
+      "ok": 2844,
+      "errors": 7156,
+      "status": {
+        "0": 1873,
+        "200": 2844,
+        "504": 3066,
+        "522": 2217
+      },
+      "p50_ms": 131318,
+      "p95_ms": 302144,
+      "p99_ms": 302318,
+      "max_ms": 302466,
+      "wall_ms": 1122059,
+      "rps": 9,
+      "sample_error": "upstream request timeout",
+      "peak_in_flight": 1817,
+      "by_function": {
+        "my_dashboard": {
+          "ok": 1287,
+          "n": 2000,
+          "p50": 115433,
+          "p95": 194034
+        },
+        "my_videos": {
+          "ok": 584,
+          "n": 2000,
+          "p50": 177355,
+          "p95": 212404
+        },
+        "record_video_progress": {
+          "ok": 409,
+          "n": 2000,
+          "p50": 282822,
+          "p95": 302213
+        },
+        "leaderboard": {
+          "ok": 321,
+          "n": 2000,
+          "p50": 90133,
+          "p95": 302294
+        },
+        "my_exam": {
+          "ok": 243,
+          "n": 2000,
+          "p50": 90104,
+          "p95": 301959
+        }
+      }
+    }
+  ],
+  "finished": "2026-11-27T15:45:45.096Z"
+}

@@ -1,0 +1,62 @@
+{
+  "started": "2026-11-27T14:58:40.542Z",
+  "target": "https://mxxkpc…",
+  "accounts": 28,
+  "vus": 0,
+  "results": [
+    {
+      "scenario": "200 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 1000,
+      "ok": 1000,
+      "errors": 0,
+      "status": {
+        "200": 1000
+      },
+      "p50_ms": 69,
+      "p95_ms": 246,
+      "p99_ms": 1456,
+      "max_ms": 2071,
+      "wall_ms": 71237,
+      "rps": 14,
+      "peak_in_flight": 22
+    },
+    {
+      "scenario": "500 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 2500,
+      "ok": 2498,
+      "errors": 2,
+      "status": {
+        "200": 2498,
+        "500": 2
+      },
+      "p50_ms": 105,
+      "p95_ms": 40347,
+      "p99_ms": 59870,
+      "max_ms": 66958,
+      "wall_ms": 150467,
+      "rps": 17,
+      "sample_error": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+      "peak_in_flight": 219
+    },
+    {
+      "scenario": "1000 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 5000,
+      "ok": 2271,
+      "errors": 2729,
+      "status": {
+        "200": 2271,
+        "500": 1,
+        "504": 2728
+      },
+      "p50_ms": 142870,
+      "p95_ms": 204460,
+      "p99_ms": 215475,
+      "max_ms": 236990,
+      "wall_ms": 857876,
+      "rps": 6,
+      "sample_error": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+      "peak_in_flight": 1000
+    }
+  ],
+  "finished": "2026-11-27T15:16:59.856Z"
+}

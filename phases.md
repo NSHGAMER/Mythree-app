@@ -25,3 +25,15 @@ Legend: ✅ done · 🟡 done in code, waiting on external configuration · ⏳ 
 5. Admin email(s) for the allowlist; organisation contact details (Admin → Settings).
 6. Real textbook chapters & questions (starter chapters are placeholders).
 7. Optional: custom domain.
+
+## Professor-requirements programme (27–28 Nov 2026) – branch `feature/professor-requirements`, staging `mythree-staging`
+| # | Phase | Status | Evidence |
+|---|---|---|---|
+| 0 | Audit, rollback tag `v1.0.0-baseline`, backup workflow, traceability | ✅ | SCALABILITY_AUDIT.md, BACKUP_AND_RECOVERY.md, REQUIREMENTS_TRACEABILITY.md |
+| 1 | Registration, ₹151 fee, member IDs (incl. English spelling, migration 0009) | ✅ staging · 🟡 live checkout needs Razorpay test keys | tests/db/registration_suite.sql, tests/db/phases.test.ts |
+| 2 | Video classes, admin-managed daily/weekly tests | ✅ staging | tests/db/phases.test.ts |
+| 3 | Exam schedules, online/offline exam, uploads, evaluation, Excel import, results | ✅ staging | tests/db/phases.test.ts, tests/db/exam_deadline_suite.sql |
+| 4 | Dashboard/admin additions, chatbot suggestions | ✅ staging | tests/e2e/phases.spec.ts |
+| 5 | Free-tier performance: caching, snapshot leaderboard, rate limiter, cron/queue jobs | ✅ staging | loadtest/RESULTS.md |
+| 6 | Staging verification, rollback rehearsal, backup drill, guides | ✅ | docs/verification/, IMPLEMENTATION_REPORT.md |
+| 7 | Production rollout | ⬜ waiting for owner approval | IMPLEMENTATION_REPORT.md §Rollout |

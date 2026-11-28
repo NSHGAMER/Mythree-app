@@ -1,74 +1,120 @@
 # Implementation report – professor requirements & free-tier hardening
 
-Branch: `feature/professor-requirements` · Rollback point: tag `v1.0.0-baseline` (production as of 26 Nov 2026).
-Production (`main`, https://mythree-five.vercel.app) is **not** changed until the owner approves each phase.
+_Final verification report · 28 Nov 2026 · branch `feature/professor-requirements` · rollback point tag `v1.0.0-baseline` (= `main`, 56c3dd1)_
 
-## Phase 0 – Audit and safety (27 Nov 2026)
-- Rollback tag `v1.0.0-baseline` pushed; all work on `feature/professor-requirements`.
-- Read `SCALABILITY_AUDIT.md`, `loadtest/RESULTS.md`, schema, RPCs, Edge Functions, Vercel config. Professor PDF not found in the project – using the owner directive.
-- Added `REQUIREMENTS_TRACEABILITY.md` (gap list), `BACKUP_AND_RECOVERY.md`, `.github/workflows/db-backup.yml` (encrypted nightly `pg_dump`; activates when the owner adds two repository secrets and the workflow reaches `main`).
-- Production database currently has **0 member accounts** (test accounts were removed), so the registration changes need no data migration of existing members.
+## 0. Status in one paragraph
+All professor-requirement features are built and verified on the free staging project **mythree-staging**. **Production and `main`
+are unchanged** – re-checked read-only on 28 Nov 2026 (`docs/verification/production-unchanged.md`). Things still waiting on the owner:
+Razorpay test keys (live checkout is not yet tested), Turnstile keys, GitHub backup secrets, and **approval of the production rollout
+in §5**. Nothing will be deployed or merged without that approval.
 
-### Owner decisions requested (defaults used until answered)
-1. Free staging Supabase project for testing migrations/payments – default: requested, not created yet.
-2. Razorpay test keys – required to test checkout end to end.
-3. UID collision/short-name policy – default: `SUBR1234`, then `SUBR1234-2`…; names < 4 letters padded with `X`; minors use guardian's last 4 digits.
-4. Answer-sheet storage – default: browser compression (~200 KB/page) + purge after evaluation with ZIP download.
-5. Video hosting – default: unlisted YouTube with IFrame API watch tracking.
-6. OTP policy – no change without decision (see below).
-
-### Evaluation: email / phone OTP requirements
-| Option | Effect on bottlenecks | Risks |
+## 1. Environments
+| | Production | Staging |
 |---|---|---|
-| Keep email confirmation ON (current) + phone OTP optional (current) | Every registration needs one email → bounded by the SMTP quota (free tiers ~100–300/day) | Registration waves must be batched |
-| Email confirmation OFF, payment required | No email needed to register; ₹151 payment proves intent and blocks most fake/bot accounts | Typos in email are not caught → password reset may go to a wrong address; anyone can register with someone else's email (they would still have to pay). Admin-allowlist auto-admin **must** be disabled or require manual promotion, otherwise an attacker could register an allowlisted email unconfirmed. |
-| Phone OTP mandatory | Every registration sends one SMS (paid per message, DLT setup in India) | Cost; shared guardian numbers make "one phone = one person" invalid anyway |
-| Recommended | Keep email confirmation ON for launch but onboard in batches; keep phone OTP optional; revisit after measuring SMTP throughput | — |
+| Web | https://mythree-five.vercel.app (`main`, v1) | local preview / Vercel preview of the branch (preview env vars still point at production – switch them to staging before using previews) |
+| Supabase | `mythree` (yflxqluyvueftocfzqzm), Free – migrations 0001–0004, 8 functions | `mythree-staging` (mxxkpcincouaniqryzfy), Free – migrations 0001–0009, 9 functions (all registration/payment/job functions; OTP, notify-admin and account-delete not deployed there), 4 cron jobs |
+| Data | 1 real member (grandfathered at rollout) | 306 test accounts on the reserved `.test` domain |
 
-No authentication setting has been changed.
+## 2. Completed features (all on staging)
+| Area | What was built | Main files |
+|---|---|---|
+| Registration | 3-step form: name, *name in English letters* (only for names in another script), DOB, exam preference, address/PIN, email, phone; adult own phone / minor guardian phone; siblings may share; draft survives refresh | `src/pages/auth/Register.tsx`, `src/lib/validation.ts`, migrations 0005, 0009 |
+| ₹151 fee | mandatory for **new** members; order re-use (no double charge), signature + Razorpay API verification, webhook, "Check payment status" recovery, reconciliation every 10 min, duplicate payment → refund flag, receipts `MYR-YYYY-000001`, admin manual confirmation with audit | `registration-order/verify/status`, `payments-webhook`, `payments-reconcile`, `src/pages/member/Registration.tsx`, `src/pages/admin/Registrations.tsx` |
+| Existing members | grandfathered: rows that exist when 0005 runs become `confirmed` (no retroactive fee); 0009 gives them a member ID | migrations 0005 (default), 0009 (backfill) |
+| Member ID | `SUBR1234`: 4 English letters + last 4 digits of the applicable phone, permanent, collisions `-2…`, advisory-locked | `assign_member_uid()` |
+| Videos | scheduled lessons in order, YouTube (unlisted) or MP4, 10-s watch buckets credited only at real-time speed, resume, completion %, +15 XP once | migration 0006, `src/pages/member/Videos.tsx`, `VideoLesson.tsx`, `src/pages/admin/Videos.tsx` |
+| Daily/weekly tests | admin-managed question sets with dates and rewards; automatic challenges as fallback | migration 0006, `src/pages/admin/ChallengeSets.tsx` |
+| Exams | batch schedules (registration month + 3), per-member override, online exam (START → 3 h server deadline + 15 min upload grace → PDF → compressed multi-photo upload with progress/retry → SUBMIT), offline flow unchanged | migration 0007, `src/pages/member/ExamRoom.tsx`, `src/pages/admin/ExamSchedules.tsx` |
+| Evaluation & results | view sheets, marks/remarks/PASS-FAIL, publish; Excel template + dry-run import with issue list; published results never silently overwritten; members see only published results | migration 0007, `src/pages/admin/Evaluation.tsx`, `src/lib/sheets.ts` |
+| Dashboard & chatbot | member ID, registration, video %, exam date/countdown/result; FAQ suggested-questions button (fills input, no auto-send) | `Dashboard.tsx`, `Chatbot.tsx` |
+| Free-tier performance | request cache + de-dup, backoff for idempotent calls, snapshot leaderboard, contention-free rate limiter, indexes, pg_cron/pgmq jobs, smaller PWA precache | migration 0008, `src/lib/cache.ts` |
+| Security | anonymous phone probing closed; trusted client IP; optional **Cloudflare Turnstile** on login/register/reset/resend (off until a site key is set) | `src/components/Turnstile.tsx`, `docs/TURNSTILE_SETUP.md` |
+| Operations | rollback scripts for 0005–0009, nightly encrypted backup workflow, isolated restore drill script | `supabase/rollback/`, `.github/workflows/db-backup.yml`, `scripts/backup_restore_drill.sql` |
 
-## Phases 1–5 – code complete on the branch (27 Nov 2026), database testing pending
-Status rule: nothing below is "complete" until the migrations have been applied to a staging project and tested.
+Design, branding, navigation, animations, roles and all v1 features are unchanged – the full v1 screen suite still passes on four device sizes.
 
-### Phase 1 – Registration & mandatory ₹151 fee
-- Migration `0005_registration.sql`: DOB, guardian name/phone, exam preference, permanent `member_uid` (advisory-locked, collision suffix `-2…`, unique index), `registration_status` (existing rows = confirmed), non-unique phones, `registration_payments` (one paid per member, receipts `MYR-YYYY-000001`), access-gate triggers on tests/challenges/exam requests, admin manual confirmation (audited), `my_registration()`.
-- Edge Functions: `registration-order` (re-uses one open order per member → no double charge across tabs), `registration-verify` (signature + Razorpay API + amount check), `registration-status` (recovery after a closed browser); webhook routes registration vs Guru Dakshina orders; duplicate captured payments are recorded for refund, never confirmed twice.
-- UI: 3-step registration (DOB, online/offline, adult phone vs guardian phone, UID preview, draft kept across refresh), `/app/registration` payment page, pending members redirected there, admin **Registrations & UIDs** page (search by UID/phone, CSV, manual confirm), UID on dashboard/profile/settings. Public copy no longer says registration is free.
+## 3. Migrations
+| # | File | Content | On staging | On production |
+|---|---|---|---|---|
+| 0001–0004 | `20261126000001…04` | v1 schema, functions, seed, FAQ matching (0001 quoting fixed for fresh builds only) | ✅ | ✅ (26 Nov) |
+| 0005 | `20261127000005_registration.sql` | registration fields, fee, UID, payments, access gate | ✅ | ⬜ |
+| 0006 | `20261127000006_videos_challenges.sql` | videos, watch progress, challenge sets | ✅ | ⬜ |
+| 0007 | `20261127000007_examinations.sql` | schedules, sessions, uploads, results, imports, storage buckets | ✅ | ⬜ |
+| 0008 | `20261127000008_performance_jobs.sql` | snapshot leaderboard, rate limiter, indexes, cron/queue jobs | ✅ | ⬜ |
+| 0009 | `20261127000009_english_name_uid.sql` | English spelling for member IDs, UID backfill for existing members | ✅ | ⬜ |
 
-### Phase 2 – Learning & video
-- Migration `0006_videos_challenges.sql`: `video_lessons` (YouTube or MP4, scheduled `publish_at`, completion %), `video_progress` with 10-second watched buckets credited only for real-time forward playback (seek/refresh cannot complete), +15 XP on completion; `challenge_sets` for admin-managed daily/weekly tests (questions, dates, XP, pass %), auto challenges remain the fallback.
-- UI: member Video classes list + player (resume, progress), admin Video lessons + Daily & weekly tests pages.
+The production upgrade path (v1 → 0005 → 0009 on existing data) was **rehearsed on staging**: rolled back to v1 with the rollback scripts
+(v1 tests 17/17, all v1 data kept, phone uniqueness restored), then re-upgraded in order (46/46 tests afterwards).
 
-### Phase 3 – Examinations
-- Migration `0007_examinations.sql`: cohort `exam_schedules` (suggested month = registration month + 3), per-member override, `exam_sessions` with server deadline and upload grace, `exam_submission_pages`, private buckets `exam-papers` / `answer-sheets` with storage policies that close at the deadline, `exam_results` (members see only published), `result_imports` audit, RPCs for start/upload/remove/submit, cohorts, submissions, save/publish results (published results never overwritten without explicit flag), Excel import with dry-run preview, purge after ZIP download.
-- UI: member **Exam & results** (countdown, START, PDF, compressed multi-photo upload with progress/retry/review, SUBMIT, results), admin **Exam schedules** and **Evaluation & results** (image review, marks, publish, offline results by UID, Excel template/import).
+## 4. Bugs found by the staging tests (all fixed on the branch – none reached production)
+| # | Bug | Fix | Regression test |
+|---|---|---|---|
+| 1 | 0001 had a broken `$` quote – a fresh project could not be built from the repo | proper `$$` quoting | `supabase/functions/_shared/migrations.test.ts` (no lone `$`) |
+| 2 | Leaderboard failed for members (bare `DELETE` rejected by Supabase's safe-update guard) | `where true` | `migrations.test.ts` (no WHERE-less DELETE/UPDATE) + `integration.test.ts` + `phases.test.ts` leaderboard tests |
+| 3 | Anonymous phone probing still possible (grant via PUBLIC) | revoke from `public, anon` | `phases.test.ts` "anonymous visitors can no longer probe phone numbers" + `migrations.test.ts` |
+| 4 | START could not resume a session after the readiness status changed | resume check moved first | `phases.test.ts` (START after publication returns the same session) |
+| 5 | One bad date/exam mode aborted a whole Excel import | per-row validation | `phases.test.ts` Excel dry-run (row with `not-a-date`) |
+| 6 | Admins briefly routed to the member area after login | auth waits for the profile | e2e `flows.spec.ts` + `phases.spec.ts` admin journeys expect `/admin` |
 
-### Phase 4 – Admin & chatbot
-- Chatbot suggested-questions button (FAQ-sourced, fills the input without sending, keyboard + Escape + outside click), instant answers from cached published FAQs using the same scoring as the server.
-- Dashboard journey cards: video %, exam date/countdown/result, member ID & registration status.
+Two outdated test expectations were also updated (registration step 1 now asks for DOB/exam preference instead of phone; the service
+worker may precache the app's own `razorpay-*.js` chunk but never Razorpay's servers).
 
-### Phase 5 – Free-tier scalability
-- Frontend: shared request cache with in-flight de-duplication + invalidation after writes, backoff+jitter retries only for idempotent calls, one profile read per login, cached settings/FAQs, admin-only heavy chunks excluded from PWA precache (4.5 MB → 3.1 MB).
-- Migration `0008_performance_jobs.sql`: append-only unlogged rate limiter (no hot rows), trusted client IP, `chapters.question_count`, read-only `my_dashboard`, `touch_last_seen()` once per session, `leaderboard_snapshot` (self-refreshing every 5 min), FK/trigram indexes, single SELECT policy per table, `run_maintenance()`, pgmq `notifications` queue, Vault-held cron secret, `schedule_mythree_jobs(functions_url)`, `admin_system_health()`.
-- Edge Functions: `payments-reconcile` (every 10 min), `notifications-worker` (every 2 min); OTP now authenticates first and uses the guardian number for minors.
+## 5. Production rollout plan (needs your approval – not started)
+1. Announce a short maintenance window; turn on Admin → Settings → *Maintenance mode*.
+2. **Backup:** run the GitHub *Database backup* workflow (needs the two secrets) and keep the encrypted artifact; Supabase Free has no built-in downloadable backup.
+3. Apply migrations **0005 → 0006 → 0007 → 0008 → 0009** in that order on production.
+4. Deploy Edge Functions: new `registration-order`, `registration-verify`, `registration-status`, `payments-reconcile`, `notifications-worker`; updated `payments-webhook`, `otp-send`, `otp-verify` (same code as staging).
+5. Run `select public.schedule_mythree_jobs('https://yflxqluyvueftocfzqzm.supabase.co/functions/v1');`.
+6. Merge `feature/professor-requirements` into `main` → Vercel deploys the new frontend.
+7. Smoke test (existing member keeps access and gets a member ID; a new test registration lands on the ₹151 page; admin pages load), then turn maintenance mode off.
+8. Razorpay **live** keys and Turnstile only after the test-mode checklist passes on staging.
 
-### Tests so far
-- Unit/component: **99 passed** (validation incl. adult/minor and UID rules, video completion, exam countdown/suggested month, CSV/Excel parsing, cache/retry, FAQ matching, chatbot suggestions).
-- Not yet run: database integration, end-to-end and load tests for phases 1–5 (need the staging project).
+**Rollback:** Vercel → Deployments → previous production deployment → *Instant Rollback* (frontend, seconds); database: `supabase/rollback/20261127000009.down.sql` → `…0008` → `…0007` → `…0006` → `…0005` (each one transaction). Rolling back 0005–0007 **deletes** registration payments, videos, exam data – export them first; empty the two exam storage buckets in the dashboard before rolling back 0007; restoring the unique phone constraint fails if members share a phone (by design – resolve first).
 
-### Dependencies added
-- `exceljs@4.4.0`, `jszip@3.10.1` (admin only, lazy-loaded). `npm audit` reports a moderate advisory in exceljs's `uuid` dependency (affects `uuid` v3/v5/v6 with a caller-supplied buffer; exceljs does not use that path).
+## 6. Test results (28 Nov 2026, staging)
+| Suite | Result | Evidence |
+|---|---|---|
+| Unit & component (Vitest) | **107 / 107** | `docs/verification/unit-tests.log` |
+| Database integration (v1 regression 17 + phases 1–5 29) | **46 / 46** | `docs/verification/db-tests.log` |
+| SQL suites (registration/UID/payments; exam deadline + rate limiter) | all results as expected | `docs/verification/sql-suites.log` |
+| Screen tests – all specs, 4 device sizes (mobile, iPhone, tablet, desktop) | **100 / 100** (+8 Turnstile tests skipped without a key) | `docs/verification/e2e-all.log` |
+| Turnstile with Cloudflare's always-pass test key (desktop + mobile) | **4 / 4** | `docs/verification/e2e-turnstile.log` |
+| Rollback to v1 → v1 tests | **17 / 17** | `docs/verification/rehearsal-1-after-rollback-v1-tests.log` |
+| Backup → isolated restore | **33 / 33 tables identical** (2,168 rows) | `docs/verification/backup-restore-drill.md` |
+| TypeScript build | clean | `npx tsc -b` |
 
-## Phase 6 – staging verification (27 Nov 2026)
-- Created the free Supabase project **mythree-staging** (owner-approved, $0). Applied migrations 0001–0008 (byte-identical to the branch, verified by MD5), deployed `registration-status`, `payments-reconcile`, `notifications-worker`, scheduled the four pg_cron jobs. Seeded 1 admin, 300 confirmed and 5 pending test members on the reserved `.test` domain (test password kept in git-ignored `.env.staging`).
-- **Tests:** unit 99/99 · DB integration 46/46 (17 v1 regression + 29 new) · SQL suites for registration/payments and exam deadlines all as expected · E2E 10/10 on desktop and mobile against staging.
-- **Bugs found and fixed by these tests** (all on the branch, none ever reached production):
-  1. 0001 had a broken `$`-quote in `faq_search_vector` – a fresh project could not be built from the repo.
-  2. Leaderboard failed for members: bare `DELETE` in `refresh_leaderboard` is rejected by Supabase's safe-update guard.
-  3. `check_phone_available` was still callable anonymously (granted via PUBLIC) – phone probing is now really closed.
-  4. `start_exam` refused to resume an existing session once the readiness status changed (e.g. after results were published).
-  5. One bad date/exam mode in an Excel import aborted the whole import instead of being listed as an issue.
-  6. Admins were briefly routed to the member area after login (role was read before the profile loaded).
-- **Load (Free plan):** 1,000 members active in the same minute – 5,000/5,000 calls OK, p95 0.11 s. 500 simultaneous requests – 0 errors, p95 ≤ 2.3 s (v1: 16 s). 2,000 members in one minute collapsed. Details: `loadtest/RESULTS.md`.
-- **Not tested (needs owner input):** live Razorpay checkout/webhook/reconciliation (test keys), e-mail digests (Resend key), CAPTCHA (Turnstile site key), backup restore drill (repository secrets).
-- **Production:** untouched. Migrations 0005–0008 and the new functions are not applied/deployed to production; `main` unchanged.
+Chatbot suggested-questions button: covered by `components.test.tsx` and by the e2e journey on desktop **and** mobile (open, choose, input filled, list closes).
+
+## 7. Load (Supabase Free) – details in `loadtest/RESULTS.md`, raw JSON in `docs/verification/loadtest-raw/`
+- **1,000 members active within one minute** (5 calls each incl. a write; 28 shared sessions; 306 registered accounts; ≤ 17–25 requests in flight at once): **5,000/5,000 OK, 0 × 429/500/502/503/504, p50 50 ms, p95 73 ms** (28 Nov; 27 Nov: p95 107 ms).
+- **1,000 simultaneous requests** (all at the same instant): mostly succeed but take 24–58 s; 28 Nov: 92 of 6,000 failed (91 × 504).
+- **2,000 members within one minute: not supported on Free** (72 % failed). We do not claim 2,000 simultaneous users.
+
+## 8. Decisions recorded
+- ₹151 registration fee mandatory for new registrations (`registration_payment_required = true`); existing production member grandfathered; Guru Dakshina separate and optional.
+- UID rule and English-spelling handling as in §2; age-based own-phone/guardian-phone rule.
+- Email confirmation and phone-OTP policy **unchanged** (evaluation in `SCALABILITY_AUDIT.md`/earlier report: keep email confirmation, onboard in batches; SMS OTP needs a paid provider).
+- Budget: Supabase Free + Vercel Hobby; no paid services added.
+
+## 9. What the owner must configure (none of it is done by me – no secrets pass through chat)
+1. **Razorpay test keys** on staging – `docs/RAZORPAY_TEST_MODE.md` §2–3, then run checklist §5.
+2. **Turnstile** widget + keys – `docs/TURNSTILE_SETUP.md` (site key in Vercel, secret only in Supabase; staging first).
+3. **Backups:** GitHub secrets `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` (`BACKUP_AND_RECOVERY.md` §2). The workflow runs once it is on `main`.
+4. **Vercel Preview env vars** → staging Supabase, if you want to test on a Vercel preview URL.
+5. Existing items from v1: custom SMTP for Auth e-mails, Auth Site URL/redirects, admin e-mail in the allowlist (production currently has **no admin account**), SMS provider (optional), real textbook chapters.
+6. **Approval** of the rollout plan in §5.
+
+## 10. Remaining tasks and known limitations
+| Item | Status |
+|---|---|
+| Live Razorpay test-mode checkout (registration + Guru Dakshina) | pending test keys |
+| CAPTCHA switched on | pending Turnstile keys (code ready) |
+| `pg_dump` backup + `pg_restore` drill | pending GitHub secrets (isolated logical drill passed) |
+| Professor's original PDF | not in the project – `docs/REQUIREMENTS_CHECKLIST.md` compares against the owner's notes and directives |
+| Video privacy | unlisted YouTube links can be shared by anyone who has them |
+| Answer-sheet storage | 1 GB free quota: ~200 KB/page after compression; purge after ZIP download |
+| Refunds | done manually in Razorpay; refund status is not synced automatically |
+| Existing members whose name is in another script | none in production today; would need an English spelling set by an operator before an ID is assigned |
+| Load | 2,000 members in one minute or 1,000 simultaneous requests need more than the Free plan |
+| Starter curriculum | 12 placeholder chapters – replace with the real textbook |
+| Production rollout | waiting for approval |

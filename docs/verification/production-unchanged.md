@@ -1,4 +1,4 @@
-# Production unchanged – evidence (checked 27 Nov 2026, 16:15 UTC, read-only queries)
+# Production unchanged – evidence (read-only checks on 27 Nov 2026 16:15 UTC and again on 28 Nov 2026 ~01:30 UTC – identical)
 
 | Check | Result |
 |---|---|

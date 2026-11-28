@@ -1,6 +1,7 @@
 import { MailCheck, Send } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { captchaEnabled, Turnstile } from '../../components/Turnstile'
 import { Alert, Button, Input } from '../../components/ui'
 import { useDocumentTitle } from '../../hooks/useAsync'
 import { friendlyError } from '../../lib/errors'
@@ -13,14 +14,18 @@ export default function ForgotPasswordPage() {
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [err, setErr] = useState('')
+  const [captcha, setCaptcha] = useState<string | null>(null)
+  const [captchaRun, setCaptchaRun] = useState(0)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setErr('Enter a valid email address.')
+    if (captchaEnabled && !captcha) return setErr('Please complete the security check.')
     setBusy(true)
     setErr('')
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: `${window.location.origin}/reset-password` })
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: `${window.location.origin}/reset-password`, captchaToken: captcha ?? undefined })
     setBusy(false)
+    if (captchaEnabled) { setCaptcha(null); setCaptchaRun((n) => n + 1) }
     // Do not reveal whether the email exists – always show the same confirmation (except rate limits).
     if (error && /rate|too many/i.test(error.message)) return setErr(friendlyError(error))
     setSent(true)
@@ -38,6 +43,7 @@ export default function ForgotPasswordPage() {
         <form onSubmit={submit} className="space-y-4" noValidate>
           {err && <Alert tone="danger">{err}</Alert>}
           <Input label="Registered email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Turnstile onToken={setCaptcha} resetKey={captchaRun} action="password_reset" />
           <Button type="submit" size="lg" className="w-full" loading={busy} icon={<Send className="size-4" />}>
             Send reset link
           </Button>

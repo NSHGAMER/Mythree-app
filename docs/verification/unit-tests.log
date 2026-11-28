@@ -1,0 +1,9 @@
+
+ RUN  v5.1.2 C:/ALL Codings/App-Main/Mythree
+
+
+ Test Files  11 passed (11)
+      Tests  107 passed (107)
+   Start at  06:45:50
+   Duration  6.98s (environment 72%, setup 13%, tests 10%, import 4%, transform 1%, worker 1%)
+

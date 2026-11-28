@@ -92,3 +92,20 @@ Key indexes: `profiles(xp desc) where member`, trigram on names/FAQ questions, G
 - Supabase Auth has its own built-in rate limits (signup/email/token) that protect against bursts; email delivery requires a custom SMTP provider for production volume.
 - Static assets are served by Vercel's CDN with immutable caching; the service worker precaches the shell for repeat visits.
 - Upgrade path: Supabase compute add-on (more connections/CPU), read replicas, materialised leaderboard refreshed by `pg_cron` if members grow beyond ~50k.
+
+## 6. Additions on branch `feature/professor-requirements` (migrations 0005–0009)
+| Table / object | Purpose | Client access |
+|---|---|---|
+| `profiles` + `date_of_birth`, `guardian_name`, `guardian_phone`, `exam_preference`, `member_uid` (unique), `name_english`, `registration_status`, `exam_schedule_id` | registration & member ID | own row; column grants for personal fields |
+| `registration_payments` | ₹151 orders/payments, one paid row per member (partial unique index), receipts `MYR-YYYY-000001` | own read; writes by Edge Functions |
+| `video_lessons`, `video_progress` | scheduled lessons; 10-s watched buckets credited only at real-time speed | lessons via `my_videos()`; progress via `record_video_progress()` |
+| `challenge_sets` | admin-managed daily/weekly question sets | admin CRUD; members via `get_challenge()` |
+| `exam_schedules`, `exam_sessions`, `exam_submission_pages`, `exam_results`, `result_imports` | cohort exam dates, 3-hour sessions, answer-sheet pages, marks, import audit | members via RPCs; results visible only when published |
+| Storage buckets `exam-papers` (PDF), `answer-sheets` (images) | private; policies open only during the member's own session window | signed URLs |
+| `leaderboard_snapshot`, unlogged `rate_limit_hits` | read-cheap leaderboard (refresh every 5 min), contention-free rate limiter | none (RPC only) |
+| pg_cron jobs `mythree-*`, pgmq queue `notifications`, Vault secret `mythree_cron_secret` | leaderboard refresh, maintenance, payment reconciliation, notification digest | server only |
+
+New Edge Functions: `registration-order`, `registration-verify`, `registration-status`, `payments-reconcile` (cron), `notifications-worker` (cron).
+Access gate: triggers on `test_attempts`, `challenge_instances`, `exam_requests` require `registration_status = 'confirmed'` (or admin).
+Rollback scripts: `supabase/rollback/*.down.sql` (generated from `templates/` by `build.mjs`), rehearsed on staging.
+Optional CAPTCHA: `src/components/Turnstile.tsx` (only when `VITE_TURNSTILE_SITE_KEY` is set) → `captchaToken` to Supabase Auth.

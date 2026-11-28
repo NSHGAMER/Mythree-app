@@ -55,3 +55,15 @@ Manifest, icons from the official logo (any + maskable + Apple), standalone, ser
 
 ## 5. Out of scope (unless requested)
 Online final exam, native app-store apps, multi-language UI (English + Sanskrit labels only for now), certificates generation.
+
+## 6. Revision – professor requirements (27–28 Nov 2026, branch `feature/professor-requirements`)
+These changes **supersede** the matching lines above once the owner approves the production rollout.
+- **Registration fee:** a one-time **₹151 registration fee is mandatory for new members**, confirmed only after server-side Razorpay verification. Members who registered before this change are grandfathered (no retroactive fee). **Guru Dakshina stays separate and optional.**
+- **Registration fields:** full name, *name in English letters* (required only when the name is written in another script), date of birth (replaces age), full address with PIN, exam preference (online/offline), email, contact number.
+- **Phone rule:** 18+ give their own mobile; under-18s give a parent/guardian name and mobile; siblings may share a guardian number – phone numbers are **no longer unique**.
+- **Member ID (UID):** permanent, first 4 English letters of the name (English spelling when the name is in Kannada/Devanagari) + last 4 digits of the applicable phone, upper case; collisions get `-2`, `-3`…
+- **Video classes:** admin-scheduled lessons in order; real watch-time tracking (no skipping to complete), resume, completion %.
+- **Daily/weekly tests:** admin-managed question sets with dates and rewards; automatic challenges remain the fallback.
+- **Examination:** readiness request kept; suggested exam month = registration month + 3 (same for a monthly batch), admin can set the exact date per batch or member; **online exam** (START → 3-hour server timer → PDF question paper → photo upload of answer sheets → SUBMIT) and **offline exam** (paper by post, as before).
+- **Evaluation & results:** admin views answer sheets, enters marks/remarks/PASS-FAIL, publishes; Excel import with template, preview and validation; members see only published results.
+- **Chatbot:** suggested-questions button sourced from FAQs (fills the input, never auto-sends).

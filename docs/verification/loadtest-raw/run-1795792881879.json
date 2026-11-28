@@ -1,0 +1,135 @@
+{
+  "started": "2026-11-27T15:17:16.464Z",
+  "target": "https://mxxkpc…",
+  "accounts": 28,
+  "vus": 0,
+  "results": [
+    {
+      "scenario": "300 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 1200,
+      "ok": 1200,
+      "errors": 0,
+      "status": {
+        "200": 1200
+      },
+      "p50_ms": 84,
+      "p95_ms": 149,
+      "p99_ms": 763,
+      "max_ms": 1942,
+      "wall_ms": 70127,
+      "rps": 17,
+      "peak_in_flight": 19,
+      "by_function": {
+        "my_dashboard": {
+          "ok": 300,
+          "n": 300,
+          "p50": 87,
+          "p95": 234
+        },
+        "my_videos": {
+          "ok": 300,
+          "n": 300,
+          "p50": 84,
+          "p95": 137
+        },
+        "leaderboard": {
+          "ok": 300,
+          "n": 300,
+          "p50": 84,
+          "p95": 142
+        },
+        "my_exam": {
+          "ok": 300,
+          "n": 300,
+          "p50": 81,
+          "p95": 130
+        }
+      }
+    },
+    {
+      "scenario": "500 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 2000,
+      "ok": 2000,
+      "errors": 0,
+      "status": {
+        "200": 2000
+      },
+      "p50_ms": 81,
+      "p95_ms": 112,
+      "p99_ms": 168,
+      "max_ms": 429,
+      "wall_ms": 68584,
+      "rps": 29,
+      "peak_in_flight": 13,
+      "by_function": {
+        "my_dashboard": {
+          "ok": 500,
+          "n": 500,
+          "p50": 83,
+          "p95": 118
+        },
+        "my_videos": {
+          "ok": 500,
+          "n": 500,
+          "p50": 79,
+          "p95": 108
+        },
+        "leaderboard": {
+          "ok": 500,
+          "n": 500,
+          "p50": 81,
+          "p95": 113
+        },
+        "my_exam": {
+          "ok": 500,
+          "n": 500,
+          "p50": 81,
+          "p95": 111
+        }
+      }
+    },
+    {
+      "scenario": "750 users active within 60s (5 calls each, 1–4 s think time)",
+      "requests": 3000,
+      "ok": 3000,
+      "errors": 0,
+      "status": {
+        "200": 3000
+      },
+      "p50_ms": 69,
+      "p95_ms": 103,
+      "p99_ms": 125,
+      "max_ms": 213,
+      "wall_ms": 71168,
+      "rps": 42,
+      "peak_in_flight": 13,
+      "by_function": {
+        "my_dashboard": {
+          "ok": 750,
+          "n": 750,
+          "p50": 71,
+          "p95": 105
+        },
+        "my_videos": {
+          "ok": 750,
+          "n": 750,
+          "p50": 68,
+          "p95": 100
+        },
+        "leaderboard": {
+          "ok": 750,
+          "n": 750,
+          "p50": 69,
+          "p95": 103
+        },
+        "my_exam": {
+          "ok": 750,
+          "n": 750,
+          "p50": 70,
+          "p95": 103
+        }
+      }
+    }
+  ],
+  "finished": "2026-11-27T15:21:21.878Z"
+}

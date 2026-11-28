@@ -1,24 +1,24 @@
 # memory.md – Working memory (update after every milestone)
 
-_Last updated: 26 Nov 2026 (deployment milestone)_
+_Last updated: 28 Nov 2026 (professor-requirements verification milestone)_
 
 ## Current state
-- LIVE: https://mythree-five.vercel.app (Vercel project nshgamers-projects/mythree, GitHub main auto-deploys).
-- Supabase project mythree (ref yflxqluyvueftocfzqzm, ap-south-1, Free). Migrations 0001–0004 applied; 8 edge functions deployed.
-- Tests executed 26 Nov 2026: 64/64 unit+component, 17/17 DB integration, 76/76 responsive+PWA on production, 4/4 signed-in journeys. Load test: see loadtest/RESULTS.md (Free tier OK to ~200 simultaneous; 2,000 burst timed out).
-- Test accounts (*@mythree.test) were deleted after testing; re-create with loadtest/seed.sql when re-testing.
-- See REPORT.md for pending owner configuration (Auth URLs, SMTP, Razorpay, SMS, admin, Pro plan).
+- **Production (unchanged since 26 Nov):** https://mythree-five.vercel.app, `main` = tag `v1.0.0-baseline` (56c3dd1), Supabase `mythree` (yflxqluyvueftocfzqzm) with migrations 0001–0004 and the 8 original functions.
+- **Development:** branch `feature/professor-requirements`; free staging project `mythree-staging` (mxxkpcincouaniqryzfy) runs migrations 0001–0009, 9 Edge Functions and 4 pg_cron jobs.
+- Staging test accounts: `admin-test@mythree.test`, `loadtest+1..300@mythree.test` (confirmed), `pending+1..5@mythree.test` (pending). Password only in the git-ignored `.env.staging`.
+- Latest results (28 Nov): unit 107/107 · DB 46/46 · SQL suites as expected · screen 100/100 (4 device sizes) · backup drill 33/33 tables match · load: see loadtest/RESULTS.md.
 
 ## Decisions
-- Stack: React 19 + Vite 8 + Tailwind 4 SPA on Vercel; Supabase (Postgres 17, Auth, Edge Functions) in ap-south-1.
-- No Redis/queues: Postgres rate-limit table + idempotent RPCs + Razorpay webhooks are sufficient at 2k members.
-- Mobile OTP is custom (hashed codes, layered rate limits) because Supabase phone auth does not support MSG91; phone verification is prompted, not required, until an SMS provider is configured (`app_settings.require_phone_verification`).
-- Starter curriculum: 12 beginner chapters × 6 questions (MCQ options shuffled at seed time). Replace with the real textbook.
-- Contributions survive account deletion (user_id → NULL + payer snapshot).
+- ₹151 registration fee mandatory for **new** members; the existing production member is grandfathered. Guru Dakshina separate and optional.
+- UID = 4 English letters (English spelling for Kannada/Devanagari names) + last 4 digits of the applicable phone; siblings may share a guardian phone.
+- Email/phone verification policy unchanged (owner decision pending). Supabase Free + Vercel Hobby only.
+- Production changes only after explicit owner approval.
 
-## Files being worked on next
-- Apply migrations, deploy functions, run DB integration tests, Playwright checks, load tests, push, deploy.
+## Next
+- Owner: Razorpay test keys on staging, Turnstile keys, GitHub backup secrets, approval of the rollout plan in IMPLEMENTATION_REPORT.md.
 
 ## Gotchas
-- Windows PowerShell 5.1 `Get-Content`/`Set-Content` corrupt UTF-8 (Devanāgarī) – edit files with Node or the editor, never PowerShell text replace.
-- CSP hashes the inline theme script in `index.html`; if that script changes, recompute the `sha256-` value in `vercel.json`.
+- Windows PowerShell 5.1 `Get-Content`/`Set-Content` corrupt UTF-8 – edit with Node or the editor.
+- CSP hashes the inline theme script in `index.html`; recompute the `sha256-` value in `vercel.json` if it changes.
+- Supabase API roles reject a bare `DELETE`/`UPDATE` without `WHERE` (pg_safeupdate) – use `where true`.
+- Supabase Auth allows ~30 sign-ins per 5 minutes per IP – load tests share 28 sessions.

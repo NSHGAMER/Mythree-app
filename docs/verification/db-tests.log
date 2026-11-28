@@ -1,0 +1,55 @@
+
+ RUN  v5.1.2 C:/ALL Codings/App-Main/Mythree
+
+ ✓ tests/db/phases.test.ts > registration & member IDs > a pending member sees the ₹151 fee and no UID yet 283ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > a pending member cannot open videos or challenges 303ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > confirmed members have a permanent UID of 4 letters + last 4 phone digits 123ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > members cannot read other members’ registration payments or call admin registration functions 352ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > anonymous visitors can no longer probe phone numbers 93ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > admin can search registrations by UID and phone 297ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > manual confirmation needs a reference, assigns a UID and is audited 274ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > registration-status function: pending stays pending without a gateway; confirmed returns the UID 1102ms
+ ✓ tests/db/phases.test.ts > registration & member IDs > scheduled job endpoints reject calls without the Vault secret 852ms
+ ✓ tests/db/phases.test.ts > video lessons > members see published lessons only after their scheduled time 119ms
+ ✓ tests/db/phases.test.ts > video lessons > members cannot write progress directly 114ms
+ ✓ tests/db/phases.test.ts > video lessons > seeking to the end does not complete a video 203ms
+ ✓ tests/db/phases.test.ts > video lessons > real-time playback completes the video, awards XP once, and resumes from the last position 32270ms
+ ✓ tests/db/phases.test.ts > admin-managed daily challenge sets > a configured set replaces the automatic questions for the day 259ms
+ ✓ tests/db/phases.test.ts > admin-managed daily challenge sets > members cannot create challenge sets 63ms
+ ✓ tests/db/phases.test.ts > online examination > members cannot read the question paper before starting 66ms
+ ✓ tests/db/phases.test.ts > online examination > offline or unapproved members cannot start the online exam 594ms
+ ✓ tests/db/phases.test.ts > online examination > START creates one session with a 3-hour server deadline; pressing again resumes it 159ms
+ ✓ tests/db/phases.test.ts > online examination > the member can open the paper during the session 68ms
+ ✓ tests/db/phases.test.ts > online examination > submitting with no pages is refused 69ms
+ ✓ tests/db/phases.test.ts > online examination > uploads only into the member’s own session folder, and registration checks the file exists 463ms
+ ✓ tests/db/phases.test.ts > online examination > SUBMIT is final and idempotent; uploads are refused afterwards 199ms
+ ✓ tests/db/phases.test.ts > online examination > admin sees the submission and can view the uploaded page 147ms
+ ✓ tests/db/phases.test.ts > online examination > results stay hidden until published, and published results are never silently overwritten 375ms
+ ✓ tests/db/phases.test.ts > online examination > Excel import: dry run lists unknown UIDs, duplicates, bad rows and published results without changing anything 523ms
+ ✓ tests/db/phases.test.ts > online examination > members cannot call evaluation functions 91ms
+ ✓ tests/db/phases.test.ts > dashboard & leaderboard snapshot > dashboard returns UID, registration, videos and exam schedule in one read 84ms
+ ✓ tests/db/phases.test.ts > dashboard & leaderboard snapshot > leaderboard is served from the snapshot and excludes pending members 69ms
+ ✓ tests/db/phases.test.ts > dashboard & leaderboard snapshot > admin system health is admin-only 181ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > a member only sees their own profile 68ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > anonymous visitors see no profiles 66ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > members cannot read questions or answer keys directly 134ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > members cannot change their XP or role 144ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > members can update their own address but not someone else’s 128ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > members cannot insert contributions or call payment functions 152ms
+ ✓ tests/db/integration.test.ts > row level security & role permissions > admin functions are forbidden to members and allowed to admins 151ms
+ ✓ tests/db/integration.test.ts > chapter tests, completion and XP > later chapters are locked until earlier ones are completed 55ms
+ ✓ tests/db/integration.test.ts > chapter tests, completion and XP > a failed attempt gives effort XP once; resubmitting the same attempt is idempotent 307ms
+ ✓ tests/db/integration.test.ts > chapter tests, completion and XP > passing marks the chapter complete and awards chapter XP exactly once 474ms
+ ✓ tests/db/integration.test.ts > chapter tests, completion and XP > awards badges (first chapter) server-side 52ms
+ ✓ tests/db/integration.test.ts > daily & weekly challenges > one daily challenge per day; XP awarded once 216ms
+ ✓ tests/db/integration.test.ts > daily & weekly challenges > weekly challenge is graded against the weekly pass mark 105ms
+ ✓ tests/db/integration.test.ts > final exam readiness > is refused until every chapter is complete 47ms
+ ✓ tests/db/integration.test.ts > final exam readiness > after completing all chapters: request saved with days taken, admin notified, idempotent 1731ms
+ ✓ tests/db/integration.test.ts > leaderboard & chatbot > leaderboard masks surnames and marks the caller 50ms
+ ✓ tests/db/integration.test.ts > leaderboard & chatbot > chatbot only answers from published FAQs 153ms
+
+ Test Files  2 passed (2)
+      Tests  46 passed (46)
+   Start at  06:45:59
+   Duration  46.88s (tests 99%, import 1%)
+
